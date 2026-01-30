@@ -12,6 +12,9 @@
 \usepackage{xcolor}
 \usepackage{hyperref}
 \usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{colortbl}
+\usepackage{makecell}
 
 % --------------------
 % Paragraph formatting
@@ -118,7 +121,8 @@ where $p(t)$ is the absolute pressure signal and $\bar{p}$ is the average pressu
 % --------------------
 % Report Content
 % --------------------
-\section{Sensor validation}
+\section{Results without Equilibar}
+\subsection{Sensor validation}
 Before performing the actual experiments, both Keller 20SX sensors are validated by connecting them in serie and in parallel downstream of the Quattroflow pump, which is shown in Figure \ref{fig:serie} and \ref{fig:parallel}. The needle valves resembles the userprocess resistance. 
 
 \begin{figure}[h!]
@@ -141,7 +145,7 @@ Before performing the actual experiments, both Keller 20SX sensors are validated
 
 The results of this validation test are shown in Figure \ref{fig:sensor_validation}. From Figure \ref{fig:validation_serie}, it is clear that an increase in RPMs while using a needle valve downstream leads to an increased absolute pressure, as expected. The relative fluctuations are shown in Figure \ref{fig:validation_serie_mean_subtracted}. However, the up- and downstream pressures in the series configuration are not equal, while this is the case in the parallel configuration (Figure \ref{fig:validation_parallel_mean_subtracted}). Although this indicates that the sensors are measuring correctly, it also shows that the fluidic system introduces some oscillatory behavior, especially at higher frequencies, leading to some phase differences and amplitude differences between both sensors in the series configuration.
 
-\begin{figure}[htbp]
+\begin{figure}[htbp!]
     \begin{subfigure}{\linewidth}
         \centering
         \includegraphics[width=\textwidth]{images/2_serie_open.eps}
@@ -171,6 +175,221 @@ The results of this validation test are shown in Figure \ref{fig:sensor_validati
     \label{fig:sensor_validation}
 \end{figure}
 
+\subsection{Proces pressure}
+The needle valve creates a resistance in the fluidic system, leading to a certain backpressure/proces pressure depending on the pump speed. The absolute upstream and downstream pressures at different pump speeds are shown in Figure \ref{fig:validation_serie}. From this figure, it can be seen that the pressure increases with increasing pump speed, as expected. Table \ref{tab:proces_pressures} summarizes the average proces pressures at different pump speeds.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{\makecell{Speed \\ {[RPM]}}} 
+        & \textbf{\makecell{Proces pressure \\ {[mbar]}}} \\
+        \hline
+        250  & 0 \\
+        \hline
+        500  & 250 \\
+        \hline
+        750  & 500 \\
+        \hline
+        1000 & 750 \\
+        \hline
+    \end{tabular}
+    \caption{Average proces pressures at different pump speeds created by the needle valve.}
+    \label{tab:proces_pressures}
+\end{table}
+
+
+\newpage
+\section{Results with Equilibar}
+The setup from Figure \ref{fig:setup_with_equilibar} is used to perform experiments with an Equilibar downstream of the Quattroflow pump. Pressure measurement are performed at variable backpressures (0, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, and 2500 mbar) and at different pump speeds (250, 500, 750, and 1000 RPM). \\
+Important to note is that when the RPMs increase, a process pressure (Table \ref{tab:proces_pressures}) can be genreated that is higher than the impoased reference pressre which leads to a fully opeened diaphragm (Figure \ref{fig:equilibar_variable_backpressure_results_low}). When the reference pressure is sufficiently above the proces pressure, the diaphragm starts to close, leading to periodic opening and closing behavior (Figure \ref{fig:equilibar_variable_backpressure_results_high}).
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth]{images/6_eq_500mbar_open.eps}
+    \caption{Pressure dynamics with an Equilibar at variable pump speeds. At higher pump speeds, the process pressure exceeds the imposed reference pressure. In this case, the diaphragm is fully open.}
+    \label{fig:equilibar_variable_backpressure_results_low}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=1\textwidth]{images/6_eq_1500mbar_open.eps}
+    \caption{Pressure dynamics with an Equilibar at variable pump speeds. At higher pump speeds, the imposed reference pressure is still higher dan the process pressure. In all situations, this diaphragm is periodically open.}
+    \label{fig:equilibar_variable_backpressure_results_high}
+\end{figure}
+
+
+\newpage
+
+\section{Result interpretation}
+\subsection{Maximum backpressure (2500 mbar)}
+To quantify the effect of the Equilibar on pressure fluctuations upstream and downstream, an analysis is performed to evaluate the percentage change in pressure fluctuations relative to the configuration without an Equilibar. For both configurations, the root mean square (RMS) value of the upstream and downstream pressure signals is calculated and defined as
+\begin{equation}
+p_{\mathrm{RMS}} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} \left(p'(t_i)\right)^2},
+\end{equation}
+where $p'(t_i)$ denotes the pressure fluctuation at time $t_i$ and $N$ is the total number of samples.
+Subsequently, the percentage change in RMS pressure fluctuations is determined. In this analysis, the pressure fluctuations measured at a backpressure of 2500 mbar with the Equilibar are compared to those obtained without an Equilibar. The results are summarized in Table~\ref{tab:pressure_changes}. The data show that the use of the Equilibar leads to a \textbf{reduction in upstream pressure fluctuations}, while \textbf{downstream pressure fluctuations increase}.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{\makecell{Speed \\ {[RPM]}}} 
+        & \textbf{\makecell{Backpressure \\ {[mbar]}}}
+        & \textbf{\makecell{Upstream change \\ {[\% RMS]}}}
+        & \textbf{\makecell{Downstream change \\ {[\% RMS]}}} \\
+        \hline
+        250  & 2500 & \cellcolor{green!22}-22\% & \cellcolor{red!44}44\% \\
+        \hline
+        500  & 2500 & \cellcolor{green!48}-48\% & \cellcolor{red!27}27\% \\
+        \hline
+        750  & 2500 & \cellcolor{green!48}-48\% & \cellcolor{red!16}16\% \\
+        \hline
+        1000 & 2500 & \cellcolor{green!43}-43\% & \cellcolor{red!19}19\% \\
+        \hline
+    \end{tabular}
+    \caption{Percentage change in pressure fluctuations [\% RMS] for upstream and downstream at constant backpressure of 2500 mbar. Comparison between without and with Equilibar cases. Green indicates a decrease in fluctuations, red indicates an increase in fluctuations.}
+    \label{tab:rms_pressure_changes}
+\end{table}
+
+\subsection{Optimal backpressure}
+From previous experiments, it was found that the optimal backpressures for minimizing upstream and downstream pressure fluctuations were approximately 0, 250, 500, and 750 mbar for pump speeds of 250, 500, 750, and 1000 RPM, respectively. A similar analysis as in the previous section is performed to evaluate the percentage change in pressure fluctuations relative to the configuration without an Equilibar. The results are summarized in Table~\ref{tab:pressure_changes_optimal}. The data show that the use of the Equilibar at optimal backpressures leads to a \textbf{significant reduction in both upstream and downstream pressure fluctuations}.
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{\makecell{Speed \\ {[RPM]}}} 
+        & \textbf{\makecell{Backpressure \\ {[mbar]}}}
+        & \textbf{\makecell{Upstream change \\ {[\% RMS]}}}
+        & \textbf{\makecell{Downstream change \\ {[\% RMS]}}} \\
+        \hline
+        250  & 0 & \cellcolor{green!71}-71\% & \cellcolor{green!69}-69\% \\
+        \hline
+        500  & 250 & \cellcolor{green!65}-65\% & \cellcolor{green!48}-48\% \\
+        \hline
+        750  & 500 & \cellcolor{green!38}-38\% & \cellcolor{green!67}-67\% \\
+        \hline
+        1000 & 750 & \cellcolor{green!35}-35\% & \cellcolor{green!47}-47\% \\
+        \hline
+    \end{tabular}
+    \caption{Percentage change in pressure fluctuations [\% RMS] for upstream and downstream at optimal backpressures. Comparison between without and with Equilibar cases. Green indicates a decrease in fluctuations, red indicates an increase in fluctuations.}
+    \label{tab:rms_pressure_changes_optimal}
+\end{table}
+
+\clearpage
+\section{chapter}{}
+\newpage
+
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|
+        c
+        |c
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}|
+    }
+        \hline
+        \textbf{RPM} 
+        & \textbf{Backpressure}
+        & \multicolumn{2}{c|}{\textbf{Upstream change}} 
+        & \multicolumn{2}{c|}{\textbf{Downstream change}} \\
+        \cline{3-6}
+        &
+        & \textbf{Base} & \textbf{4x} 
+        & \textbf{Base} & \textbf{4x} \\
+        \hline
+        250  
+        & 2500 mbar
+        & \cellcolor{green!20}-17\%
+        & \cellcolor{green!40}-39\%
+        & \cellcolor{red!70}73\%
+        & \cellcolor{green!50}-51\% \\
+        \hline
+        500  
+        & 2500 mbar
+        & \cellcolor{green!50}-52\%
+        & \cellcolor{green!30}-27\%
+        & \cellcolor{red!50}46\%
+        & \cellcolor{green!40}-42\% \\
+        \hline
+        750  
+        & 2500 mbar
+        & \cellcolor{green!60}-55\%
+        & \cellcolor{red!100}188\%
+        & \cellcolor{red!30}29\%
+        & \cellcolor{red!10}5\% \\
+        \hline
+        1000
+        & 2500 mbar
+        & \cellcolor{green!40}-44\%
+        & \cellcolor{green!50}-54\%
+        & \cellcolor{red!50}47\%
+        & \cellcolor{green!80}-80\% \\
+        \hline
+    \end{tabular}
+    \caption{Percentage change in pressure fluctuations for upstream and downstream at base and 4x frequencies. Comparison between without and with Equilibar (at 2500 mbar) cases. Green indicates a decrease in fluctuations, red indicates an increase in fluctuations.}
+    \label{tab:pressure_changes}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \begin{tabular}{|
+        c
+        |c
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}
+        |>{\centering\arraybackslash}m{2cm}|
+    }
+        \hline
+        \textbf{RPM} 
+        & \textbf{Backpressure}
+        & \multicolumn{2}{c|}{\textbf{Upstream change}} 
+        & \multicolumn{2}{c|}{\textbf{Downstream change}} \\
+        \cline{3-6}
+        & 
+        & \textbf{Base} & \textbf{4x} 
+        & \textbf{Base} & \textbf{4x} \\
+        \hline
+        250
+        & 0 mbar
+        & \cellcolor{green!80}-77\%
+        & \cellcolor{green!80}-79\%
+        & \cellcolor{green!70}-74\%
+        & \cellcolor{green!80}-76\% \\
+        \hline
+        500
+        & 250 mbar
+        & \cellcolor{green!80}-80\%
+        & \cellcolor{red!30}27\%
+        & \cellcolor{green!40}-37\%
+        & \cellcolor{green!60}-57\% \\
+        \hline
+        750
+        & 500 mbar
+        & \cellcolor{green!90}-88\%
+        & \cellcolor{red!100}583\%
+        & \cellcolor{green!80}-74\%
+        & \cellcolor{green!10}-7\% \\
+        \hline
+        1000
+        & 750 mbar
+        & \cellcolor{green!80}-75\%
+        & \cellcolor{red!40}40\%
+        & \cellcolor{green!50}-51\%
+        & \cellcolor{green!60}-61\% \\
+        \hline
+    \end{tabular}
+    \caption{Percentage change in pressure fluctuations for upstream and downstream at base and 4x frequencies. Comparison between without and with Equilibar (at optimal backpressures) cases. Green indicates a decrease in fluctuations, red indicates an increase in fluctuations.}
+    \label{tab:pressure_changes_optimal}
+\end{table}
+
+
+    
 \newpage
 
 
@@ -247,7 +466,7 @@ It was expected that the Equilibar would significantly reduce the pressure fluct
 
 \bigskip
 
-Based on the results and observations from this report, it can be concluded that the Equilibar is effective in damping the pressure fluctuations downstream of the pump, providing a more stable pressure output (and flow output). However, further investigation is needed to fully understand the impact of the Equilibar on upstream pressure dynamics. 
+Based on the results and observations from this report, it can be concluded that the Equilibar is effective in damping the pressure fluctuations downstream of the pump, providing a more stable pressure output (and flow output). However, further investigation is needed to fully understand the impact of the Equilibar on upstream pressure dynamics.
 
 \bigskip
 
@@ -265,5 +484,17 @@ Recommendations for further investigation:
 % \bibitem{ref1}
 % Author, \textit{Title of Reference}, Publisher, Year.
 % \end{thebibliography}
+
+% Punten
+% Fluctuaties upstream of juist downstream verminderen?
+% When process pressure is equal to reference pressure, the air in reference pressure acts as an compressible volume, which can dampen fluctuations?
+
+% Vervolgstappen
+% Overleg met Bas over huidige resultaten
+% Wens: 
+% - Flowcontrol zonder stabiele voordruk
+% - Stabiele voordruk met continue afblazen? Of juist met actieve regeling?
+% 13 februari naar PCS?
+
 
 \end{document}
