@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="99mm"
+   height="38mm"
+   viewBox="0 0 99 38"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   sodipodi:docname="setup.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     inkscape:zoom="6.5946632"
+     inkscape:cx="262.63661"
+     inkscape:cy="76.880348"
+     inkscape:window-width="2560"
+     inkscape:window-height="1387"
+     inkscape:window-x="2560"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g5-5">
+    <inkscape:grid
+       id="grid1"
+       units="mm"
+       originx="26"
+       originy="16"
+       spacingx="0.99999998"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="5"
+       enabled="true"
+       visible="true" />
+    <inkscape:page
+       x="0"
+       y="0"
+       width="99"
+       height="38.000004"
+       id="page1"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <rect
+       x="154.96065"
+       y="-102.04724"
+       width="79.370079"
+       height="41.574802"
+       id="rect2" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="Layer 2"
+     transform="translate(26.000002,16)"
+     style="display:inline">
+    <path
+       id="path18"
+       style="display:inline;fill:none;stroke:#800000;stroke-width:0.25;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       inkscape:label="Flow"
+       d="m 5,-2 h -15 v -13 h -10 v 5 m 0,20 v 5 H 5 v 0 0 m 15,0 V -2 h -5 m 1.999997,18.000002 1.000001,-1.000001 m 0,0 L 16.999997,14 m 5.000002,10e-7 1,1 -1,1 M 20.999997,13 19.999999,11.999999 18.999999,13 m 0,-11.9999998 1,-0.99999985782481 L 20.999997,1.0000002 m -22.9999987,-3.9999999 -1.0000001,0.9999998 1.0000001,1.00000014 m -9.0000003,-8.00000004 1,-1.0000001 1.0000001,1.0000001 M -21.000002,-13 l 1,1 1,-1 m -2,24.999999 1,1.000001 1,-1.000001 M -6.0000018,14 l 1.0000001,1.000001 -1.0000001,1.000001 M 15,15 l 16.999996,-2e-6 V -2.0000007 l 3,2e-7 m 11,-2e-7 4.000001,9e-7 m 10.999999,0 h 4 V 6.0000004 M 63.999995,-8.2986397e-7 l 1,0.99999994986397 1,-0.99999994986397 M 30.999996,0.99999912 l 1,-0.99999994986397 1,0.99999994986397 m -2,11.99999888 1,-0.999999 1,0.999999 m -4,3 1,-1 m 0,0 -1,-1"
+       sodipodi:nodetypes="ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" />
+  </g>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(26.000002,16)">
+    <g
+       id="g10"
+       inkscape:label="Pump"
+       style="fill:#aaffaa;stroke:#008000;stroke-width:0.5;stroke-dasharray:none">
+      <circle
+         style="fill:#aaffaa;stroke:#008000;stroke-width:0.5;stroke-linejoin:bevel;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="path5"
+         transform="scale(1,-1)"
+         cy="-15"
+         cx="10"
+         r="5" />
+      <path
+         style="fill:#aaffaa;stroke:#008000;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="m 10,20 5,-5 -5,-5 c 0,0 -4.9999999,5 0,10 z"
+         id="path10"
+         sodipodi:nodetypes="cccc" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#008000;stroke:#000000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="4.9999986"
+         y="16.62879"
+         id="text11-7"
+         transform="translate(4.9999995,5.0000001)"><tspan
+           sodipodi:role="line"
+           id="tspan11-3"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#008000;stroke:none;stroke-width:0.5"
+           x="4.9999986"
+           y="16.62879">Pump</tspan></text>
+    </g>
+    <rect
+       style="fill:#ffd5d5;stroke:#800000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect10"
+       width="10"
+       height="20"
+       x="-25"
+       y="-10"
+       rx="2.0000021"
+       ry="2.0000002" />
+    <rect
+       style="fill:#ffd5d5;stroke:#800000;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       id="rect10-3"
+       width="10.000004"
+       height="4.9999976"
+       x="59.999996"
+       y="5.9416671"
+       rx="2.0000038"
+       ry="1.9999999" />
+    <text
+       xml:space="preserve"
+       style="font-size:1.76389px;line-height:1.50812px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#800000;stroke:#000000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       x="-20.000002"
+       y="-0.058332857"
+       id="text11-7-8"
+       inkscape:transform-center-x="1.3932437"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;line-height:1.50812px;font-family:Arial;-inkscape-font-specification:Arial;fill:#800000;stroke:none;stroke-width:0.5"
+         x="-20.000002"
+         y="-0.058332857"
+         id="tspan30">Main</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;line-height:1.50812px;font-family:Arial;-inkscape-font-specification:Arial;fill:#800000;stroke:none;stroke-width:0.5"
+         x="-20.000002"
+         y="1.5372286"
+         id="tspan31">reservoir</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:1.76389px;line-height:1.45521px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#800000;stroke:#000000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       x="64.999992"
+       y="8.2042961"
+       id="text11-7-8-5"
+       inkscape:transform-center-x="1.3932437"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;line-height:1.45521px;font-family:Arial;-inkscape-font-specification:Arial;fill:#800000;stroke:none;stroke-width:0.5"
+         x="64.999992"
+         y="8.2042961"
+         id="tspan32">Weight</tspan><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;line-height:1.45521px;font-family:Arial;-inkscape-font-specification:Arial;fill:#800000;stroke:none;stroke-width:0.5"
+         x="64.999992"
+         y="9.7469473"
+         dx="0"
+         id="tspan33">reservoir</tspan></text>
+    <g
+       id="g1"
+       inkscape:label="Equilibar_1"
+       style="fill:#000080;stroke:#000080">
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#000080;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="10.0625"
+         y="-0.35053831"
+         id="EQ-DA-9"><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000080;stroke:none;stroke-width:0.5"
+           x="10.0625"
+           y="-0.35053831"
+           id="tspan3">FD-Series</tspan><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000080;stroke:none;stroke-width:0.5"
+           x="10.0625"
+           y="-0.26309684"
+           id="tspan2" /></text>
+      <rect
+         style="fill:#000080;fill-opacity:0.1;stroke:#000080;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect10-6"
+         width="5"
+         height="10"
+         x="-4.4708333"
+         y="-15"
+         rx="1.3229166"
+         ry="1.3229167"
+         transform="rotate(90)" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#000080;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="9.999999"
+         y="-2.3505383"
+         id="EQ-DA-9-2"><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000080;stroke:none;stroke-width:0.5"
+           x="9.999999"
+           y="-2.3505383"
+           id="tspan2-9">Equilibar</tspan></text>
+    </g>
+    <g
+       id="g8"
+       inkscape:label="Ball_valve"
+       style="display:inline;fill:#8080ff;stroke:#000080"
+       transform="translate(5.0000008,28.000001)">
+      <path
+         style="fill:#8080ff;stroke:#000080;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="M 35.000001,5 V 15 L 42,10 Z"
+         id="path7" />
+      <path
+         style="fill:#8080ff;stroke:#000080;stroke-width:0.5;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="m 42,10 7.000001,5 V 5 Z"
+         id="path8"
+         sodipodi:nodetypes="cccc" />
+      <circle
+         style="display:inline;fill:#000080;stroke:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="path9"
+         cx="42.000004"
+         cy="10"
+         r="3" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#000080;stroke:#000000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="42"
+         y="15.000001"
+         id="text11-7-7"><tspan
+           sodipodi:role="line"
+           id="tspan11-3-6"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000080;stroke:none;stroke-width:0.5"
+           x="42"
+           y="15.000001">Valve</tspan></text>
+    </g>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.26458333,0,0,0.26458333,-26.000002,-16)"
+       id="text1"
+       style="font-size:5.33333px;line-height:0px;font-family:Arial;-inkscape-font-specification:Arial;writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect2);display:inline;fill:#000000;fill-opacity:0.1;stroke:#000000;stroke-width:0.944882;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3" />
+    <g
+       id="g5"
+       inkscape:label="Equilibar_2"
+       transform="translate(50.249996)"
+       style="display:inline">
+      <rect
+         style="fill:#ff0000;fill-opacity:0.1;stroke:#ff0000;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect4"
+         width="5.0329738"
+         height="10.999999"
+         x="-4.5131073"
+         y="-10.75"
+         rx="1.3229166"
+         ry="1.3229167"
+         transform="rotate(90)" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#ff0000;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="5.254292"
+         y="-0.35053831"
+         id="text4"><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#ff0000;stroke:none;stroke-width:0.5"
+           x="5.254292"
+           y="-0.35053831"
+           id="tspan1">SDO-Series</tspan><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#ff0000;stroke:none;stroke-width:0.5"
+           x="5.254292"
+           y="-0.26309684"
+           id="tspan4" /></text>
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#ff0000;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="5.1785321"
+         y="-2.3505383"
+         id="text34"><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#ff0000;stroke:none;stroke-width:0.5"
+           x="5.1785321"
+           y="-2.3505383"
+           id="tspan34">Equilibar</tspan></text>
+    </g>
+    <g
+       id="g5-5"
+       inkscape:label="Equilibar_2"
+       transform="translate(35.249995,0.14019033)"
+       style="display:inline">
+      <rect
+         style="fill:#00ffff;fill-opacity:0.1;stroke:#00ffff;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect4-4"
+         width="4"
+         height="11"
+         x="-4.1401911"
+         y="-10.750001"
+         rx="1.6600575"
+         ry="1.3229167"
+         transform="rotate(90)" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#008080;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="5.1785321"
+         y="-1.6663696"
+         id="text34-5"><tspan
+           sodipodi:role="line"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#008080;stroke:none;stroke-width:0.5"
+           x="5.1785321"
+           y="-1.6663696"
+           id="tspan34-5">Flow sensor</tspan></text>
+    </g>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="Layer 3"
+     transform="translate(26.000002,16)"
+     style="display:inline">
+    <ellipse
+       style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:0.971134"
+       id="path33"
+       cx="26.120823"
+       cy="15"
+       rx="1"
+       ry="1.0000002" />
+    <text
+       xml:space="preserve"
+       style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#ff0000;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       x="26.120823"
+       y="17.649462"
+       id="text5"><tspan
+         sodipodi:role="line"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000000;stroke:none;stroke-width:0.5"
+         x="26.120823"
+         y="17.649462"
+         id="tspan5">Process pressure</tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="Text"
+     transform="translate(0,-1)">
+    <g
+       id="g38"
+       inkscape:label="Scale">
+      <path
+         style="fill:#666666;fill-opacity:0.1;stroke:#1a1a1a;stroke-width:0.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none"
+         d="m 57.999997,12 c 0,0 0,2.999999 2.999999,2.999999 h 8 c 0,0 3.000001,10e-7 3.000001,-2.999999"
+         id="path6"
+         sodipodi:nodetypes="csc"
+         inkscape:label="Scale"
+         transform="translate(26.000002,17)" />
+      <text
+         xml:space="preserve"
+         style="font-size:1.76389px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#800000;stroke:#000000;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="91"
+         y="31"
+         id="text11-7-8-5-9"
+         inkscape:transform-center-x="1.3932437"
+         inkscape:label="Weightscale"><tspan
+           sodipodi:role="line"
+           id="tspan11-3-8-5-5"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:1.76389px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000000;stroke:none;stroke-width:0.5"
+           x="91"
+           y="31">Scale</tspan></text>
+    </g>
+    <g
+       id="g12"
+       inkscape:label="EQ-DA_label_FD"
+       transform="translate(26.000002,17)"
+       style="stroke:#000080">
+      <path
+         style="display:inline;fill:none;stroke:#000080;stroke-width:0.199731;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="M 9.9999973,-4.719002 10,-8.0000001 v 0 0"
+         id="path17"
+         sodipodi:nodetypes="cccc" />
+      <rect
+         style="fill:none;stroke:#000080;stroke-width:0.228016;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect17"
+         width="16"
+         height="4"
+         x="1.9999975"
+         y="-12"
+         rx="0.88652217"
+         ry="0.99999988" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.82222px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#000080;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="9.999999"
+         y="-9"
+         id="text13"><tspan
+           sodipodi:role="line"
+           id="tspan13"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222px;font-family:Arial;-inkscape-font-specification:Arial;fill:#000080;stroke:none;stroke-width:0.5"
+           x="9.999999"
+           y="-9">FD EQ-DA</tspan></text>
+    </g>
+    <g
+       id="g13"
+       inkscape:label="EQ-DA_label_SDO"
+       transform="translate(71.489309,17)"
+       style="stroke:#ff0000">
+      <path
+         style="display:inline;fill:none;stroke:#ff0000;stroke-width:0.199731;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="M 9.9824068,-4.761121 10,-8.0000001 v 0 0"
+         id="path12"
+         sodipodi:nodetypes="cccc" />
+      <rect
+         style="fill:none;stroke:#ff0000;stroke-width:0.228016;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         id="rect12"
+         width="19"
+         height="4"
+         x="0.51068956"
+         y="-12"
+         rx="0.88652217"
+         ry="0.99999988" />
+      <text
+         xml:space="preserve"
+         style="font-size:2.82222px;line-height:0px;font-family:'Monaspace Radon';-inkscape-font-specification:'Monaspace Radon, Normal';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;display:inline;fill:#ff0000;stroke:none;stroke-width:0.499999;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         x="9.999999"
+         y="-9"
+         id="EQ-DA"><tspan
+           sodipodi:role="line"
+           id="tspan11-1"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222px;font-family:Arial;-inkscape-font-specification:Arial;fill:#ff0000;stroke:none;stroke-width:0.5"
+           x="9.999999"
+           y="-9">SDO EQ-DA</tspan></text>
+    </g>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer4"
+     inkscape:label="Box"
+     transform="translate(26.000002,16)"
+     style="display:none">
+    <rect
+       style="fill:#808080;fill-opacity:0.1;stroke:#000000;stroke-width:0.25;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:3;stroke-dasharray:0.25, 0.75;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal"
+       id="rect18"
+       width="10"
+       height="3"
+       x="15"
+       y="5"
+       rx="0.99999988"
+       ry="0.99999982" />
+  </g>
+</svg>
