@@ -1,0 +1,12 @@
+# Ignore all build folders
+*build/
+
+# Ignore all PDFs
+*.pdf
+
+# But allow PDFs in specific folders
+!parallel_equilibar/specific_images/**/*.pdf
+
+# MacOS specific files
+.DS_Store
+
