@@ -25,6 +25,10 @@
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric}
 \usetikzlibrary{positioning,calc,fit,backgrounds}
 
+\usepackage{svg}
+\usepackage{algorithm}% http://ctan.org/pkg/algorithm
+\usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
+
 % --------------------
 % Paragraph formatting
 % --------------------
@@ -39,7 +43,7 @@
 \newcommand{\ReportSubTitle}{System Identification, State Estimation,\\and Model-Based Control}
 \newcommand{\AuthorName}{Hubald Verzijl}
 \newcommand{\AuthorEmail}{hubald@pressurecontrolsolutions.com}
-\newcommand{\VersionNumber}{0.2}
+\newcommand{\VersionNumber}{0.3}
 \newcommand{\ReportDate}{\today}
 
 \hypersetup{
@@ -100,7 +104,7 @@
 \end{titlepage}
 
 \section*{Introduction}
-This report presents the development of a Linear Quadratic Integral (LQI) controller for the EQ-DA system. The controller is based on a state-space model identified from experimentally acquired closed-loop data. Because the EQ-DA exhibits open-loop instability, system identification can be performed under PID stabilization using pseudo-random binary sequence (PRBS) excitation, or by applying a open-loop PRBS signal around a (manually found) operating point.
+This report presents the development of a \textit{Linear Quadratic Integral} (LQI) controller for the EQ-DA system. The controller is based on a state-space model identified from experimentally acquired closed- or open-loop data. Because the EQ-DA exhibits open-loop instability, system identification can be performed under \textit{Proportional-Integral-Derivative} (PID) stabilization using \textit{pseudo-random binary sequence} (PRBS) excitation, or by applying a open-loop PRBS signal around a (manually found) operating point.
 
 The identified model is subsequently used to design a Kalman state observer and an LQI controller. The resulting control architecture combines optimal state-feedback control with integral action to achieve accurate setpoint tracking while eliminating steady-state error. Ideally, the LQI controller is tuned with a slider tool to adjust the trade-off between control effort and tracking performance. The report also includes experimental results demonstrating the effectiveness of the proposed control strategy.
 
@@ -110,7 +114,7 @@ The proposed methodology can be applied to both the inner and outer control loop
 \newpage
 
 \section{Methods}
-This section describes the proposed model-based control design procedure. As illustrated in Figure~\ref{fig:workflow}, the method consists of four sequential steps: Closed-loop data collection using PID stabilization and PRBS excitation, State-space model identification using the N4SID algorithm, Kalman observer design for state estimation, and Linear Quadratic Regulator (LQR) and Linear Quadratic Integral (LQI) controller synthesis based on the identified model. Each step is described in detail in the following sections.
+This section describes the proposed model-based control design procedure. As illustrated in Figure~\ref{fig:workflow}, the method consists of four sequential steps: Closed-loop data collection using PID stabilization and PRBS excitation, or open-loop data collection with PRBS excitation, state-space model identification using the \textit{numerical algorithms for subspace state space system identification} (N4SID) algorithm, Kalman observer design for state estimation, and \textit{Linear Quadratic Regulator} (LQR) and \textit{Linear Quadratic Integral} (LQI) controller synthesis based on the identified model. Each step is described in detail in the following sections.
 
 % Preamble:
 % \usepackage{tikz}
@@ -263,7 +267,7 @@ Figure~\ref{fig:control_architecture} illustrates the proposed control architect
 
 \newpage
 \subsection{State-space model}
-A key step in model-based control design is the development of a state-space representation of the EQ-DA dynamics. The state-space model provides a compact mathematical description of the system in terms of internal states, control inputs, and measured outputs.
+A key step in model-based control design is the development of a state-space representation of the EQ-DA dynamics, this can also be called the mathematical model. The state-space model provides a compact mathematical description of the system in terms of internal states, control inputs, and measured outputs.
 \begin{equation}
 \begin{aligned}
 x[k+1] &= Ax[k] + Bu[k] \\
@@ -278,11 +282,11 @@ where:
     \item $y[k] \in \mathbb{R}^{p}$ is the output, $p$ is the number of outputs of the system,
     \item $A \in \mathbb{R}^{n \times n}$, $B \in \mathbb{R}^{n \times m}$, $C \in \mathbb{R}^{p \times n}$, and $D \in \mathbb{R}^{p \times m}$ are the system matrices.
 \end{itemize}
-A dynamically complex system results in a higher order state-space model (higher $n$), while a simpler system results in a lower order state-space model (lower $n$). The state-space model can be used to design controllers, such as LQR and LQI controllers, to achieve desired performance and stability characteristics. Model predictive control (MPC) can also be designed based on the state-space model, allowing for optimal control of the system over a finite time horizon.
+A dynamically complex system results in a higher order state-space model (higher $n$), while a simpler system results in a lower order state-space model (lower $n$). The state-space model can be used to design controllers, such as LQR and LQI controllers, to achieve desired performance and stability characteristics. \textit{Model predictive control} (MPC) can also be designed based on the state-space model, allowing for optimal control of the system over a finite time horizon.
 
 \subsection{State-space model identification}
 \subsubsection{Closed-loop identification}
-As the EQ-DA is open-loop unstable, closed-loop identification is used to obtain its state-space model. Figure \ref{fig:closedloop_identification} shows a roughly tuned PID controller to stabilize the system during identification, while a pseudo-random binary sequence (PRBS) excites it across a range of frequencies. The PRBS is generated using the \texttt{prbs} function from the \texttt{python-control} package and applied as the reference input. The resulting input-output data is then used with the \texttt{n4sid} method to estimate the state-space matrices $A$, $B$, $C$, and $D$. Importantly, the PID controller output acts as the actual EQ-DA input and is therefore used as the input signal for the \texttt{n4sid} identification algorithm. The identified model can subsequently be used for controller design and analysis. 
+As the EQ-DA is open-loop unstable, closed-loop identification can be used to obtain its state-space model. Figure \ref{fig:closedloop_identification} shows a roughly tuned PID controller to stabilize the system during identification, while a PRBS excites it across a range of frequencies. The PRBS is generated using the \texttt{prbs} function from the \texttt{python-control} package and applied as the reference input. The resulting input-output data is then used with the \texttt{n4sid} method to estimate the state-space matrices $A$, $B$, $C$, and $D$. Importantly, the PID controller output acts as the actual EQ-DA input and is therefore used as the input signal for the \texttt{n4sid} identification algorithm. The identified model can subsequently be used for controller design and analysis. However, this method requires a roughly tuned PID controller to stabilize the system during identification, which may not always be feasible or desirable. In such cases, open-loop identification can be performed around a manually found operating point.
 
 \begin{figure}[ht]
     \centering
@@ -348,7 +352,7 @@ As the EQ-DA is open-loop unstable, closed-loop identification is used to obtain
 \end{figure}
 
 \subsubsection{Open-loop identification}
-As an alternative to closed-loop identification, open-loop identification can be performed by applying a PRBS signal around a manually found operating point. This approach requires careful tuning of the PRBS amplitude to ensure that the system remains stable during the identification process. The input-output data collected from the open-loop experiment is then used with the \texttt{n4sid} method to estimate the state-space matrices. Open-loop identification can provide a more direct representation of the system dynamics, but it may be more challenging to implement due to the inherent instability of the EQ-DA.
+As an alternative to closed-loop identification, open-loop identification can be performed by applying a PRBS signal around a manually found operating point. This approach requires somewhat rough tuning of the PRBS amplitude to ensure that the system remains stable during the identification process. The input-output data collected from the open-loop experiment is then used with the \texttt{n4sid} method to estimate the state-space matrices. Open-loop identification can provide a more direct representation of the system dynamics, but it may be more challenging to implement due to the inherent instability of the EQ-DA.
 
 \begin{figure}[ht]
     \centering
@@ -412,11 +416,14 @@ As an alternative to closed-loop identification, open-loop identification can be
     \label{fig:openloop_identification}
 \end{figure}
 
-\paragraph{State interpretation} As no mathematical model of the EQ-DA is available, the identified states are not directly interpretable. However, they can be used for control design and analysis. The identified state-space model captures the essential dynamics of the system, allowing for the design of optimal controllers and observers. The states can be thought of as abstract representations of the system's internal behavior, which may correspond to physical quantities such as pressures, flows, or other relevant variables.
+\newpage
+\subsubsection{State interpretation} When a known mathemathical model is used wihtin system identification, one would know that the identified states correspond to physical quantities such as pressures, flows, or other relevant variables. However, in the case of the EQ-DA, no mathematical model is available, and the identified states are not directly interpretable. The states can be thought of as abstract representations of the system's internal behavior, which may correspond to physical quantities such as pressures, flows, or other relevant variables. This strategy is normally called a black-box model, where the focus is on capturing the input-output behavior of the system rather than explicitly modeling its internal dynamics.
 
 \newpage
 \subsection{Kalman observer}
-Different types of state observers can be designed. In this report, a Kalman state observer is designed based on the identified state-space model. The Kalman filter is an optimal state estimator that minimizes the estimation error covariance by considering both the process noise and measurement noise. Ideally, $\hat{y}(k)$ will be equal to $y(k)$ from Figure \ref{fig:control_architecture}, but in practice, they converge to the true values, but there will be some estimation error. The Kalman filter equations are given by:
+After finding the state-space model, a state observer can be designed to estimate the system states from the measured output and applied control input. The observer provides an estimate of the internal states, which may not be directly measurable, allowing for feedback control based on these estimated states. The observer is particularly useful when some states are not directly measurable or when measurement noise is present.
+
+Different types of state observers can be designed. In this report, a Kalman state observer is designed based on the identified state-space model. The Kalman filter is an optimal state estimator that minimizes the estimation error covariance by considering both the process noise and measurement noise. Ideally, $\hat{x}(k)$ will be equal to $x(k)$ (true state) from Figure \ref{fig:control_architecture}, but in practice, they converge to the true values, but there will be some estimation error. The Kalman filter equations are given by:
 \begin{equation}
 \begin{aligned}
 \hat{x}[k+1] &= A \hat{x}[k] + B u[k] + L (y[k] - \hat{y}[k]) \\
@@ -476,10 +483,11 @@ J = \sum_{k=0}^{\infty} (\tilde{x}[k]^T \tilde{Q}_{LQI} \tilde{x}[k] + u[k]^T \t
 \end{equation}
 where 
 \begin{equation}
-\tilde{Q}_{LQI} = \begin{bmatrix} Q & 0 \\ 0 & q_i \end{bmatrix}, \quad
+\label{eq:weight}
+\tilde{Q}_{LQI} = \begin{bmatrix} Q & 0 \\ 0 & speed \end{bmatrix}, \quad
 \tilde{R}_{LQI} = R.
 \end{equation}
-The parameter $q_i$ determines the relative importance of eliminating tracking error. A larger value increases the emphasis on reference tracking and typically reduces steady-state error more rapidly, while potentially increasing control effort. 
+The parameter $speed$ determines the relative importance of eliminating tracking error. A larger value increases the emphasis on reference tracking and typically reduces steady-state error more rapidly, while potentially increasing control effort. 
 
 The optimal gain matrix $\tilde{K}$ is obtained by solving the discrete-time Riccati equation for the augmented system. The resulting controller combines optimal state-feedback regulation with integral action, providing both good transient performance and zero steady-state tracking error.
 
@@ -492,6 +500,12 @@ It is important to note that the LQI controller uses the estimated states $\hat{
 u[k] = -\tilde{K} \begin{bmatrix} \hat{x}[k] \\ z[k] \end{bmatrix}.
 \end{equation}
 
+\subsection{Setpoint filtering}
+\label{sec:setpoint_filter}
+Saturation occurs when the control input exceeds the actuator limits, which can lead to integrator windup. This happens not only when the control input is below 0\% valve opening or above 100\% valve opening, but also when the valve is adjusted further while the flow is choked. The latter can occur when the reference pressure is changed too quickly, causing the controller to demand a control action that exceeds the physical capabilities of the valve. This can result in a temporary loss of control. 
+
+To mitigate this, a setpoint filter option is implemented to smooth the reference signal before it is fed into the controller. The setpoint filter is designed as a first-order low-pass filter with a time constant $\tau$, which is based on the identified system dynamics. During the identification process, the time constants for both inflow and outflow segments are estimated as functions of pressure ($\tau_{in}(p)$ and $\tau_{out}(p)$). These time constants are then used to define the setpoint filter, ensuring that the reference signal changes at a rate that the system can physically respond to without causing saturation or integrator windup. This strategy helps usuring stability and performance and forces the controller to operate within the physical limits of the system.
+
 \subsection{Inner versus outer loop}
 The strategy as described can be applied to both the inner and outer control loops of the EQ-DA system. The inner loop typically controls the fast reference pressure while the outer loop controls a slower variable, such as forward pressure or flow. The inner loop is designed to stabilize the system and reject disturbances quickly, while the outer loop ensures accurate tracking of the desired setpoint over a longer time horizon. The design of both loops follows the same principles of state-space modeling, observer design, and LQI controller synthesis.
 
@@ -499,14 +513,212 @@ Eventually, systems identifcation yields a single state-space model that consist
 
 \newpage
 \section{Results: internal loop}
-An Equilibar was connected to an upstream pressure of 25 bar. A 100 micron flow restrictor was placed on the reference pressure side. Main objective is to design single-valve controller based on a LQI controller.
-\subsection{System identification | open-loop}
-An open-loop identification experiment was conducted to obtain a state-space model of the internal EQ-DA system. A PRBS signal was applied around a manually determined operating point, and the resulting input-output data was collected. The manually determined operating point was chosen such that the average output (reference pressure) was around 10 bar. The \texttt{n4sid} method was then used to estimate the state-space matrices $A$, $B$, $C$, and $D$. The identified model captures the essential dynamics of the system, allowing for subsequent controller design.  
+An EQ-DA was connected to an upstream pressure of 25 bar. A 100 micron flow restrictor was placed on the reference pressure side, so the inlet valve is the primary control element and controller against a constant leak. Main objective is to design single-valve controller based on a LQI controller.
 
+\subsection{Open-loop data collection}
+An open-loop identification experiment was conducted to obtain a state-space model of the internal EQ-DA dynamics. The experiment, sampled at
+$T_s = 5$~ms, consisted of four consecutive phases:
+\begin{enumerate}
+    \item \textbf{Inflow (2~s):} the inlet valve was fully opened. The resulting pressure rise is used later to estimate the inflow time constant.
+    \item \textbf{Open-loop PRBS excitation (10~s):} a PRBS signal with an amplitude of $\pm 5\%$ was applied around a manually determined operating point of
+          52.5\% valve opening. This operating point was chosen such that the average output (reference pressure) was approximately 10~bar.
+    \item \textbf{Pressure build-up (2~s):} the inlet valve was fully opened again to bring the system to maximum pressure.
+    \item \textbf{Outflow (8~s):} the outlet valve was opened. The resulting pressure decay is used to estimate the outflow time constant.
+\end{enumerate}
+The \texttt{n4sid} method was applied to the input-output data from the PRBS phase to estimate the state-space matrices $A$, $B$, $C$, and $D$, with the input expressed relative to the operating point. Based on the singular values, a fourth-order model was selected. The identified model captures the essential dynamics of the system and forms the basis for the observer and controller design in the following sections.
+
+% Include figure 
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/open_loop_signal.svg}
+    \caption{Resulting reference pressures from the open-loop identification experiment. First, the inlet valve is fully opened to allow the pressure to rise. Then, a PRBS signal is applied around an operating point of 52.5\% valve opening, resulting in a fluctuating reference pressure of approximately 10~bar. After the PRBS phase, the inlet valve is fully opened again to build up pressure, followed by opening the outlet valve to allow the pressure to decay. The inflow and outflow segments are used to estimate the time constants for setpoint filtering, while the PRBS segment is used for system identification using the \texttt{n4sid} method.}
+    \label{fig:identification_results}
+\end{figure}
+
+\subsection{State-space model identification}
+\subsubsection{System order}
+The singular values of the Hankel matrix, obtained from the \texttt{n4sid} method, are shown in Figure~\ref{fig:eigenvalues}. The plot indicates a drop in magnitude after the fourth singular value after which the singular values are stay relatively constant, suggesting that a fourth-order model is appropriate for capturing the essential dynamics of the EQ-DA system. Therefore, a fourth-order state-space model was selected for further analysis and controller design.
+
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=0.7\textwidth]{figures/eigenvalues.svg}
+    \caption{Singular values of the Hankel matrix obtained from the \texttt{n4sid} method. The plot shows four significant singular values, with the fifth and subsequent values being relatively constant. This indicates that a fourth-order model is sufficient to capture the essential dynamics of the EQ-DA system. The remaining singular values are relatively constant, suggesting that higher-order models would not provide significant additional information.}
+    \label{fig:eigenvalues}
+\end{figure}
+
+\subsubsection{Identified state-space model}
+Next, the system matrixes of the state-space model are estimated using the \texttt{n4sid} method. The identified matrices $A$, $B$, $C$, and $D$ are given by:
+\begin{equation}
+\begin{aligned}
+A &= \begin{bmatrix}
+ 0.999281798 & -0.0101576518 &  0.00542226814 & -0.000460844576 \\
+-0.000165798244 &  0.987789640 &  0.192224925 & -0.0184817195 \\
+-0.00190412814 & -0.0379144833 &  0.171966249 & -0.224236810 \\
+ 0.000420946443 &  0.00176421455 &  0.250587201 &  0.940164238
+\end{bmatrix}, \\[4pt]
+B &= \begin{bmatrix}
+-1.00134 \times 10^{-3} \\
+ 3.6299 \times 10^{-4} \\
+-6.35406 \times 10^{-3} \\
+ 1.44084 \times 10^{-3}
+\end{bmatrix}, \\[4pt]
+C &= \begin{bmatrix}
+-11.8959432 & -1.24191249 & 1.45765712 & 0.00753784934
+\end{bmatrix}, and\\[4pt]
+D &= \begin{bmatrix} 1.39101423 \times 10^{-5} \end{bmatrix}.
+\end{aligned}
+\label{eq:identified_model}
+\end{equation}
+It is important to note that each repetiton of the identification experiment may yield slightly different state-space matrices due to variations in the experimental conditions and noise. However, the overall dynamics captured by the identified model should remain consistent, allowing for effective controller design and analysis.
 
 \newpage
-\section{Results: external loop}
+\subsection{Maximum inflow and outflow time constants}
+The inflow and outflow time constants are estimated from the pressure rise and decay segments of the open-loop identification experiment. A single fit of a first-order exponential function to the entire inflow or outflow did not provide a good fit, so the segments were divided into 1~bar pressure bands, and a first-order exponential function was fitted to each band. The resulting time constants for each band are shown in Figure~\ref{fig:time_constants}. The maximum inflow time constant is slight lower than the maximum outflow time constant. Besides that, the time constant increases when the setpoint pressure is reached. Therefore, setpoint changes close to the maximum upstream pressure, or close to zero should be filtered more than setpoint changes in the middle of the operating range.
 
+The found time constants are used to define the setpoint filter for the LQI controller, ensuring that the reference signal changes at a rate that the system can physically respond to without causing saturation or integrator windup.
+
+\begin{figure}[ht]
+    \centering
+    \includesvg[width=\textwidth]{figures/tau_vs_pressure.svg}
+    \caption{Estimated inflow and outflow time constants as functions of pressure. The time constants are obtained by fitting a first-order exponential function to 1~bar pressure bands of the inflow and outflow segments of the open-loop identification experiment. The maximum inflow time constant is approximately 0.6~s, while the maximum outflow time constant is approximately 1.0~s. These time constants are used to define the setpoint filter for the LQI controller, ensuring that the reference signal changes at a rate that the system can physically respond to without causing saturation or integrator windup. }
+    \label{fig:time_constants}
+\end{figure}
+
+\newpage
+\subsection{Closed-loop LQI control}
+\subsubsection{Single setpoint, speed = 5}
+Figure \ref{fig:single_setpoint} shows the closed-loop response of the EQ-DA system under LQI control, with a speed factor of 5 (see Equation~\ref{eq:weight}). The reference pressure is set to 10~bar, and the LQI controller regulates the system to track this setpoint. At the beginning the integrator state makes sure the openingpoint of the valve is found. The controller successfully drives the system to the desired setpoint, with the output pressure converging to 10~bar. The third graph shows the convergence of the other four states (as it is a fourth-order system).
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/single_setpoint.svg}
+    \caption{Closed-loop LQI control of the EQ-DA with a single setpoint for a $speed$ factor of 5.}
+    \label{fig:single_setpoint}
+\end{figure}
+
+\clearpage
+\newpage
+\subsubsection{Multiple setpoint, speed = 5, 50, 500, 5000}
+Now the setpoints are changed between 10 and 12 bar, with different speed factors of 5, 50, 500 and 5000 (see Equation~\ref{eq:weight}). The speed factor determines the aggressiveness of the controller, with higher values resulting in faster response but potentially more overshoot and oscillations. The results are shown in Figure~\ref{fig:multiple_setpoints}. As this speed factor is a single tuning parameter, it can be used to adjust the trade-off between speed and robustness of the controller by using a slider in the GUI.
+
+The figure illustrates that there is an optimal speed factor for fast tracking of the setpoint changes without causing excessive overshoot or oscillations. At a speed factor of 5000, the controller is too aggressive, resulting in an integrator that continues integrating and leads to a closing valve while the maximum pressure decay is reached. This can happen during choked flow conditions, showing large under- or over-shoots. From Figure~\ref{fig:time_constants}, these are more dominant at the outflow side, where the time constant is higher. 
+
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/multiple_setpoints.svg}
+    \caption{Closed-loop LQI control of the EQ-DA with multiple setpoints}
+    \label{fig:multiple_setpoints}
+\end{figure}
+
+\clearpage
+\newpage
+\subsection{Setpoint filtering}
+Figure \ref{fig:setpoint_filtering} shows setpoints alternating between 1 and 2 bar, with a speed factor of 500. A decreasing setpoint leads to choked flow, where the maximum valve flow is reached. The controller continues to integrate, causing the valve to close while the maximum pressure decay is reached. This causes integrator windup and a temporary loss of control, resulting in an undershoot. An alternative is a setpoint filter, as discussed in Section~\ref{sec:setpoint_filter}, which smooths the reference signal before it reaches the controller. The first-order low-pass filter uses a time constant based on the identified system dynamics, preventing setpoint changes that exceed the system's capabilities and cause saturation. It is disabled when the pressure reaches $\pm10\%$ of the setpoint.
+The filter works well for decreasing setpoints but less well for increasing setpoints. Although it largely prevents over- and undershoot, it does not guarantee optimal performance. Its tuning balances responsiveness and stability within the physical limits of the system.
+
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/multiple_setpoints_low_setpoint.svg}
+    \caption{Effect of setpoint filtering on the closed-loop response of the EQ-DA system under LQI control. Two scenarios are shown: one without setpoint filtering (blue) and one with (green). The reference pressure alternates between 1 and 2 bar, with a speed factor of 500. In the unfiltered case, the controller experiences integrator windup during the decreasing setpoint, leading to a temporary loss of control and an undershoot of the desired setpoint. In contrast, the filtered case shows a smoother response, preventing saturation and integrator windup, resulting in better tracking performance; although the response is slower.}
+    \label{fig:setpoint_filtering}
+\end{figure}
+
+\clearpage
+\newpage
+\section{Results: external loop}
+Some interesting experiments were performed with the external loop, where the internal and external loops are controlled by LQI. Results will follow in a future version of this report.
+
+\newpage
+\section{Summary for implementation on EQ-DA hardware}
+With help from AI. :) The procedure is split into two parts. Algorithm~\ref{alg:offline} covers the steps performed once, prior to implementation (data collection, identification
+and controller synthesis). This is the offline procedure and can be performed in the GUI. Algorithm~\ref{alg:online} is the real-time routine executed on the EQ-DA every sample period $T_s$ and implements the LQI control law with anti-windup. The real-time routine can be implemented in the EQ-DA firmware.
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\begin{algorithm}[ht]
+\caption{Prior to implementation (offline) using open-loop identification}\label{alg:offline}
+\begin{algorithmic}[1]
+\Require $T_s = 5$ ms, $u_{\max} = 20\,000$, PRBS base found by experimentation: e.g., $u_0 = 10\,500$,
+         amplitude $1000$, switch probability $0.1$, model order $n = 4$,
+         weights $Q, R$, speed factor, noise covariances $Q_n, R_n$
+\Ensure $A, B, C, D, L, K_x, K_i$, and $\tau_{\text{in}}(p)$, $\tau_{\text{out}}(p)$
+\Procedure{DesignLQIOpenLoop}{}
+  \Statex \textit{Data collection (open-loop, sampled at $T_s$)}
+  \State $u \gets u_{\max}$ for 2 s \Comment{inflow segment}
+  \State $u \gets u_0 \pm 1000$ (PRBS) for 10 s \Comment{identification segment}
+  \State $u \gets u_{\max}$ for 2 s \Comment{build up pressure}
+  \State $u \gets 0$ for 8 s \Comment{outflow segment}
+  \Statex \textit{System identification (PRBS segment only)}
+  \State $\delta u[k] \gets u[k] - u_0$
+  \State Run \texttt{n4sid} on $(\delta u, y)$ with 20 block rows
+%   \State Choose $n$ from the singular values; $\{A,B,C,D\} \gets$ model of order $n$
+  \Statex \textit{Setpoint filter time constants}
+  \State Fit $p(t) = p_\infty + (p_0 - p_\infty)\,e^{-t/\tau}$ on the inflow
+         and outflow segments
+  \For{each 1 bar pressure band of each segment}
+    \State Fit $\tau$ with $p_\infty$ fixed from the full-segment fit
+  \EndFor
+  \State $\tau_{\text{in}}(p), \tau_{\text{out}}(p) \gets$ linear interpolation
+         between band values
+  \Statex \textit{Kalman observer}
+  \State $L \gets \texttt{dlqe}(A, I, C, Q_n, R_n)$, \quad $Q_n = R_n = 10^{-3}$
+  \Statex \textit{LQI controller}
+  \State $\tilde{A} \gets \begin{bmatrix} A & 0 \\ -C T_s & 1 \end{bmatrix}$,
+         \quad $\tilde{B} \gets \begin{bmatrix} B \\ -D T_s \end{bmatrix}$
+    \State $\tilde{Q} \gets \operatorname{diag}(10^{3} I_n,\; 10^{3}\cdot\text{speed})$, \Comment{Speed determines the aggressiveness/robustness trade-off}
+         \quad $R \gets 10^{-3}$
+  \State $\tilde{K} \gets \texttt{dlqr}(\tilde{A}, \tilde{B}, \tilde{Q}, R)$;
+         \quad partition $\tilde{K} = [K_x \;\, K_i]$
+  \State Store $\{A, B, C, D, K_x, K_i, L, T_s\}$
+  \State Upload parameters onto EQ-DA
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[ht]
+\caption{Real-time LQI control on the EQ-DA (every $T_s$)}\label{alg:online}
+\begin{algorithmic}[1]
+\Require Stored controller parameters $\{A, B, C, D, K_x, K_i, L, T_s\}$, $\tau_{\text{in}}(p)$, $\tau_{\text{out}}(p)$,
+         integrator limit $z_{\max} = 50$
+\Procedure{LQIControl}{}
+  \State $\hat{x} \gets 0$, \quad $z \gets 0$, \quad $u \gets 0$
+  \For{40 samples} \Comment{observer warm-up, 200 ms}
+    \State $y \gets$ measured pressure
+    \State $\hat{x}^- \gets A\hat{x} + Bu$; \quad
+           $\hat{x} \gets \hat{x}^- + L\,(y - C\hat{x}^- - Du)$
+  \EndFor
+  \Loop
+    \State $(r, y) \gets$ setpoint and measured pressure
+    \Statex \hspace{\algorithmicindent}\textit{Setpoint filter}
+    \If{$r - y > 0.1\,y$} \Comment{large step up}
+      \State $\alpha \gets T_s / (\tau_{\text{in}}(y) + T_s)$; \quad
+             $r_f \gets r_f + \alpha\,(r - r_f)$
+    \ElsIf{$r - y < -0.1\,y$} \Comment{large step down}
+      \State $\alpha \gets T_s / (\tau_{\text{out}}(y) + T_s)$; \quad
+             $r_f \gets r_f + \alpha\,(r - r_f)$
+    \Else
+      \State $r_f \gets r$
+    \EndIf
+    \Statex \hspace{\algorithmicindent}\textit{Kalman observer}
+    \State $\hat{x}^- \gets A\hat{x} + Bu$ \Comment{$u$ from previous sample}
+    \State $\hat{x} \gets \hat{x}^- + L\,(y - C\hat{x}^- - Du)$
+    \Statex \hspace{\algorithmicindent}\textit{Integral action with anti-windup}
+    \State $e \gets r_f - y$
+    \State $z_c \gets \min(\max(z + T_s e,\, -z_{\max}),\, z_{\max})$
+    \State $v \gets -K_x\hat{x} - K_i z$
+    \If{$0 \le v \le u_{\max}$ \textbf{or} $(v > u_{\max} \wedge e < 0)$
+        \textbf{or} $(v < 0 \wedge e > 0)$}
+      \State $z \gets z_c$ \Comment{integrate unless it deepens saturation}
+    \EndIf
+    \Statex \hspace{\algorithmicindent}\textit{Control output}
+    \State $u \gets \min(\max(-K_x\hat{x} - K_i z,\, 0),\, u_{\max})$
+    \State Write $u$ to the valve; wait until the next sample
+  \EndLoop
+  \State On exit: set valves to the safe state
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\clearpage
 \newpage
 \section*{Version control}
 \addcontentsline{toc}{section}{Version control}
@@ -516,7 +728,8 @@ An open-loop identification experiment was conducted to obtain a state-space mod
 Version & Date & Description \\
 \hline
 0.1 & August 21, 2026 & Initial draft \\ 
-0.2 & Oktober 9, 2026 & Included internal loop results \\
+0.2 & Oktober 9, 2026 & Included methodological details \\
+0.3 & Oktober 9, 2026 & Included internal loop results \\
 \hline
 \end{tabular}
 
