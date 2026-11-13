@@ -1,0 +1,1066 @@
+\documentclass[12pt,a4paper]{article}
+
+% --------------------
+% Packages
+% --------------------
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{setspace}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+\usepackage{subcaption}
+\usepackage{colortbl}
+\usepackage{booktabs}
+\usepackage{makecell}
+\usepackage{multirow}
+\usepackage{svg}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric}
+\usetikzlibrary{positioning,calc,fit,backgrounds}
+
+\usepackage{algorithm}% http://ctan.org/pkg/algorithm
+\usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
+
+\usepackage{tabularx}
+
+% --------------------
+% Paragraph formatting
+% --------------------
+\setlength{\parindent}{0pt}  % Remove paragraph indentation
+% \setlength{\parskip}{1em}    % Optional: add space between paragraphs
+
+% --------------------
+% Project Information
+% --------------------
+\newcommand{\CompanyName}{Pressure Control Solutions}
+\newcommand{\ReportTitle}{Linear Quadratic Integral Control\\of an EQ-DA}
+\newcommand{\ReportSubTitle}{System Identification, State Estimation,\\and Model-Based Control}
+\newcommand{\AuthorName}{Hubald Verzijl}
+\newcommand{\AuthorEmail}{hubald@pressurecontrolsolutions.com}
+\newcommand{\VersionNumber}{0.4}
+\newcommand{\ReportDate}{\today}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Linear Quadratic Integral Control of an EQ-DA},
+    pdfauthor={\AuthorName},
+    pdfkeywords={Pressure, Dynamics, EQ-DA, Equilibar, LQI, Report},
+}
+
+% --------------------
+% Header & Footer
+% --------------------
+\pagestyle{fancy}
+\fancyhf{} % Clear default header/footer
+
+% Header
+\setlength{\headheight}{30pt}
+\fancyhead[L]{%
+  \includegraphics[height=0.75cm]{../images/logo.png}
+}
+\fancyhead[R]{Report Version \VersionNumber}
+
+% Footer
+\fancyfoot[C]{\thepage}
+
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% --------------------
+% Title Page
+% --------------------
+\begin{document}
+
+\begin{titlepage}
+    \thispagestyle{fancy}
+    \fancyfoot{} % Clear footer for this page only
+    \centering
+    \vspace*{2cm}
+    {\Huge \bfseries \ReportTitle \par}
+    \vspace{0.5cm}
+    {\Large \ReportSubTitle \par}
+    \vspace{2cm}
+    % \begin{center}
+        % \includegraphics[width=0.8\textwidth]{images/setup.pdf}
+    % \end{center}
+    \vspace{2cm}
+    {\Large \CompanyName \par}
+    \vspace{0.25cm}
+    {\small Author: \AuthorName \par}
+    \vspace{0.25cm}
+    {\small Report Version: \VersionNumber \par}
+    \vspace{0.25cm}
+    {\small Date: \ReportDate \par}
+    \vfill
+\end{titlepage}
+
+\section*{Introduction}
+This report presents the development of a \textit{Linear Quadratic Integral} (LQI) controller for the EQ-DA system. The controller is based on a state-space model identified from experimentally acquired closed- or open-loop data. Because the EQ-DA does not hold a fixed operating point without feedback (its pressure drifts slowly and is very sensitive to the valve opening), system identification can be performed under \textit{Proportional-Integral-Derivative} (PID) stabilization using \textit{pseudo-random binary sequence} (PRBS) excitation, or by applying an open-loop PRBS signal around a manually found operating point.
+
+The identified model is subsequently used to design a Kalman state observer and an LQI controller. The resulting control architecture combines optimal state-feedback control with integral action to achieve accurate setpoint tracking without steady-state error. The LQI controller is intended to be tuned with a single slider that sets the trade-off between control effort and tracking performance. The report also includes experimental results demonstrating the effectiveness of the proposed control strategy.
+
+The proposed methodology can be applied to both the inner and outer control loops of the EQ-DA system. The report describes the system identification procedure, observer design methodology, controller synthesis, and experimental results.
+
+\tableofcontents
+\newpage
+
+\section{Methods}
+This section describes the proposed model-based control design procedure. As illustrated in Figure~\ref{fig:workflow}, the method consists of four sequential steps: (1) closed-loop data collection using PID stabilization and PRBS excitation, or open-loop data collection with PRBS excitation; (2) state-space model identification using the \textit{numerical algorithms for subspace state space system identification} (N4SID) algorithm; (3) Kalman observer design for state estimation; and (4) \textit{Linear Quadratic Regulator} (LQR) and \textit{Linear Quadratic Integral} (LQI) controller synthesis based on the identified model. Each step is described in detail in the following sections.
+
+\begin{figure}[ht]
+    \centering
+    \resizebox{\linewidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        node distance=0.8cm and 0.8cm,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            text width=3cm, minimum height=1.6cm, align=center
+        },
+        data/.style  ={block, fill=blue!7,    draw=blue!60!black},
+        ident/.style ={block, fill=orange!10, draw=orange!70!black},
+        ctrl/.style  ={block, fill=green!8,   draw=green!45!black},
+        group/.style ={draw=gray!70, dashed, rounded corners=6pt, inner sep=7pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+        flow/.style  ={->, line width=0.7pt},
+    ]
+        % --- Data collection alternatives ---
+        \node[data] (ol) {\textbf{Open-loop}\\[2pt]
+                          PRBS around valve\\ opening point};
+        \node[data, below=1.2cm of ol] (cl) {\textbf{Closed-loop}\\[2pt]
+                          PID with PRBS\\as reference input};
+        \node[circle, draw=gray!70, fill=white, inner sep=1.5pt,
+              font=\scriptsize\bfseries]
+              at ($(ol.south)!0.5!(cl.north)$) {OR};
+
+        % --- Identification and controller design ---
+        \coordinate (mid) at ($(ol.east)!0.5!(cl.east)$);
+        \node[ident, right=1.4cm of mid] (id)
+              {\textbf{State-space model identification}\\[2pt](\texttt{n4sid})};
+        \node[ctrl, right=of id]  (kf)  {\textbf{Kalman observer}};
+        \node[ctrl, right=of kf]  (lqi) {\textbf{State-feedback controller}\\(LQR/LQI)};
+
+        % --- Connections ---
+        \coordinate (merge) at ($(mid)+(0.7,0)$);
+        \draw[line width=0.7pt] (ol.east) -| (merge);
+        \draw[line width=0.7pt] (cl.east) -| (merge);
+        \fill (merge) circle (1.5pt);
+        \draw[flow] (merge) -- (id);
+        \draw[flow] (id) -- (kf);
+        \draw[flow] (kf) -- (lqi);
+
+        % --- Grouping frames ---
+        \begin{scope}[on background layer]
+            \node[group, fit=(ol)(cl),
+                  label={[grouplabel]above:Data collection}] {};
+            \node[group, fit=(kf)(lqi),
+                  label={[grouplabel]above:Controller design}] {};
+        \end{scope}
+    \end{tikzpicture}
+    }%
+    \caption{Workflow of the proposed control strategy. A state-space model is
+    identified with \texttt{n4sid} from either open-loop or closed-loop
+    (PID with PRBS excitation) data, and is then used to design a Kalman
+    observer and an LQR/LQI state-feedback controller.}
+    \label{fig:workflow}
+\end{figure}
+
+\subsection{Control strategy}
+Figure~\ref{fig:control_architecture} illustrates the proposed control architecture. The controller consists of three components: a Kalman state observer, state-feedback control, and integral action. The Kalman observer estimates the system states from the measured output and the applied control input. These estimated states are fed back through the gain matrix $K_x$ to generate the control action. The state-feedback gain is computed using LQR theory, which minimizes a cost function that balances state regulation and control effort. To eliminate steady-state tracking errors, an integrator is added on the output error. The resulting augmented controller is referred to as an LQI controller. By including the integral state in the control law, the system can accurately track reference signals while keeping the advantages of optimal state-feedback control.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            minimum height=1.1cm, minimum width=1.2cm, align=center
+        },
+        plant/.style ={block, minimum width=2.2cm, fill=orange!10, draw=orange!70!black},
+        ctrl/.style  ={block, fill=green!8,   draw=green!45!black},
+        obs/.style   ={block, minimum width=2.2cm, fill=blue!7, draw=blue!60!black},
+        sum/.style   ={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=5mm},
+        sign/.style  ={font=\scriptsize, inner sep=1pt},
+        group/.style ={draw=gray!70, dashed, rounded corners=6pt, inner sep=7pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+        flow/.style  ={->, line width=0.7pt},
+        line/.style  ={line width=0.7pt},
+        dot/.style   ={circle, fill, inner sep=1.3pt},
+    ]
+        % --- Forward path ---
+        \node (r) {$r(k)$};
+        \node[sum,  right=1.0cm of r]     (s1)    {};
+        \node[ctrl, right=1.1cm of s1]    (integ) {Integrator};
+        \node[ctrl, right=1.2cm of integ] (ki)    {$K_i$};
+        \node[sum,  right=0.9cm of ki]    (s2)    {};
+        \node[plant, right=1.5cm of s2]   (plant) {\textbf{EQ-DA}};
+        \coordinate[right=0.8cm of plant] (ytap);
+
+        % --- Observer-based state feedback ---
+        \node[obs,  below=1.4cm of plant] (kf) {Kalman\\observer};
+        \node[ctrl] at (s2 |- kf)         (kx) {$K_x$};
+
+        % --- Summation signs ---
+        \node[sign] at ($(s1.west)+(-0.2,0.25)$)   {$+$};
+        \node[sign] at ($(s1.south)+(-0.25,-0.2)$) {$-$};
+        \node[sign] at ($(s2.west)+(-0.2,0.25)$)   {$-$};
+        \node[sign] at ($(s2.south)+(-0.25,-0.2)$) {$-$};
+
+        % --- Forward connections ---
+        \draw[flow] (r) -- (s1);
+        \draw[flow] (s1) -- node[above] {$e(k)$} (integ);
+        \draw[flow] (integ) -- node[above] {$x_i(k)$} (ki);
+        \draw[flow] (ki) -- (s2);
+        \draw[flow] (s2) -- node[above, pos=0.35] {$u(k)$} (plant);
+        \draw[line] (plant) -- (ytap);
+        \draw[flow] (ytap) -- ++(0.8,0) node[right] {$y(k)$};
+
+        % --- Observer inputs: u(k) and y(k) ---
+        \coordinate (utap) at ($(s2.east)!0.62!(plant.west)$);
+        \coordinate (uin)  at ($(kf.north)+(-0.5,0)$);
+        \node[dot] at (utap) {};
+        \draw[flow] (utap) |- ($(uin)+(0,0.55)$) -- (uin);
+        \node[dot] at (ytap) {};
+        \node[dot] at (ytap |- kf) {};
+        \draw[flow] (ytap |- kf) -- (kf.east);
+
+        % --- State feedback ---
+        \draw[flow] (kf) -- node[above] {$\hat{x}(k)$} (kx);
+        \draw[flow] (kx) -- (s2);
+
+        % --- Output feedback to the error summation ---
+        \coordinate (fb) at ($(kf.south)+(0,-1.0)$);
+        \draw[flow] (ytap) -- (ytap |- fb) -| (s1.south);
+
+        % --- Grouping frames ---
+        \begin{scope}[on background layer]
+            \node[group, fit=(s1)(ki),
+                  label={[grouplabel]above:Integral action}] {};
+            \node[group, fit=(kx)(kf),
+                  label={[grouplabel]below:Observer-based state feedback (LQR)}] {};
+        \end{scope}
+    \end{tikzpicture}
+    \caption{LQI control architecture with Kalman state observer. The observer
+    estimates the states $\hat{x}(k)$ from the applied control input $u(k)$ and
+    the measured output $y(k)$. The control action combines state feedback
+    through $K_x$ with feedback of the integrated tracking error $x_i(k)$
+    through $K_i$, i.e.\ $u(k) = -K_x\hat{x}(k) - K_i x_i(k)$, where
+    $K = [K_x \;\, K_i]$ is the LQI gain. The integral action provides zero
+    steady-state tracking error.}
+    \label{fig:control_architecture}
+\end{figure}
+
+\newpage
+\subsection{State-space model}
+A key step in model-based control design is a state-space representation of the EQ-DA dynamics, also called the mathematical model. The state-space model provides a compact mathematical description of the system in terms of internal states, control inputs, and measured outputs:
+\begin{equation}
+\begin{aligned}
+x[k+1] &= Ax[k] + Bu[k] \\
+y[k] &= Cx[k] + Du[k]
+\end{aligned}
+\label{eq:ss}
+\end{equation}
+where:
+\begin{itemize}
+    \item $k$ is the discrete time index,
+    \item $x[k] \in \mathbb{R}^{n}$ is the state vector; the number of states $n$ is the order of the system,
+    \item $u[k] \in \mathbb{R}^{m}$ is the control input, $m$ is the number of inputs of the system,
+    \item $y[k] \in \mathbb{R}^{p}$ is the output, $p$ is the number of outputs of the system,
+    \item $A \in \mathbb{R}^{n \times n}$, $B \in \mathbb{R}^{n \times m}$, $C \in \mathbb{R}^{p \times n}$, and $D \in \mathbb{R}^{p \times m}$ are the system matrices.
+\end{itemize}
+A dynamically complex system results in a higher-order state-space model (higher $n$), while a simpler system results in a lower-order model (lower $n$). The state-space model can be used to design controllers, such as LQR and LQI controllers, to achieve the desired performance and stability. \textit{Model predictive control} (MPC) can also be designed based on the state-space model, allowing for optimal control of the system over a finite time horizon.
+
+\subsection{State-space model identification}
+\subsubsection{Closed-loop identification}
+Because the EQ-DA does not hold a fixed operating point without feedback, closed-loop identification can be used to obtain its state-space model. Figure~\ref{fig:closedloop_identification} shows a roughly tuned PID controller that keeps the system near its operating point during identification, while a PRBS excites it across a range of frequencies. The PRBS is generated using the \texttt{prbs} function from the \texttt{python-control} package and applied as the reference input. The resulting input-output data is then used with the \texttt{n4sid} method to estimate the state-space matrices $A$, $B$, $C$, and $D$. Importantly, the PID controller output is the actual EQ-DA input and is therefore used as the input signal for the \texttt{n4sid} identification algorithm. The identified model can subsequently be used for controller design and analysis. However, this method requires a roughly tuned PID controller, which may not always be feasible or desirable. In such cases, open-loop identification can be performed around a manually found operating point.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            minimum height=1.1cm, minimum width=1.2cm, align=center
+        },
+        plant/.style ={block, minimum width=2.2cm, fill=orange!10, draw=orange!70!black},
+        ctrl/.style  ={block, fill=green!8,   draw=green!45!black},
+        ident/.style ={block, minimum width=2.2cm, fill=blue!7, draw=blue!60!black},
+        sum/.style   ={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=5mm},
+        sign/.style  ={font=\scriptsize, inner sep=1pt},
+        flow/.style  ={->, line width=0.7pt},
+        line/.style  ={line width=0.7pt},
+        data/.style  ={->, line width=0.7pt, dashed},
+        dot/.style   ={circle, fill, inner sep=1.3pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+    ]
+        % --- Closed loop ---
+        \node (r) {$r(k)$};
+        \node[grouplabel, above=0pt of r] {PRBS};
+        \node[sum,   right=1.0cm of r]     (sum)   {};
+        \node[ctrl,  right=1.1cm of sum]   (pid)   {PID};
+        \node[plant, right=1.8cm of pid]   (plant) {\textbf{EQ-DA}};
+        \coordinate[right=0.8cm of plant]  (ytap);
+        \coordinate (utap) at ($(pid.east)!0.5!(plant.west)$);
+
+        % --- Identification ---
+        \node[ident] at ($(utap)!0.5!(ytap)+(0,2.0)$) (n4sid) {\texttt{n4sid}};
+
+        % --- Summation signs ---
+        \node[sign] at ($(sum.west)+(-0.2,0.25)$)   {$+$};
+        \node[sign] at ($(sum.south)+(-0.25,-0.2)$) {$-$};
+
+        % --- Forward connections ---
+        \draw[flow] (r) -- (sum);
+        \draw[flow] (sum) -- node[above] {$e(k)$} (pid);
+        \draw[flow] (pid) -- node[above, pos=0.22] {$u(k)$} (plant);
+        \draw[line] (plant) -- (ytap);
+        \draw[flow] (ytap) -- ++(0.8,0) node[right] {$y(k)$};
+
+        % --- Output feedback ---
+        \draw[flow] (ytap) -- ++(0,-1.1) -| (sum.south);
+
+        % --- Recorded data to identification ---
+        \node[dot] at (utap) {};
+        \node[dot] at (ytap) {};
+        \draw[data] (utap) |- (n4sid.west);
+        \draw[data] (ytap) |- (n4sid.east);
+
+        % --- Identified model ---
+        \draw[flow] (n4sid) -- ++(0,1.0) node[above] {$\{A, B, C, D\}$};
+    \end{tikzpicture}
+    \caption{Closed-loop identification of the EQ-DA. A PRBS reference $r(k)$
+    excites the loop while a roughly tuned PID controller keeps the EQ-DA near
+    its operating point. The controller output $u(k)$ and the measured output
+    $y(k)$ are recorded (dashed) and passed to \texttt{n4sid}, which estimates the
+    state-space matrices $\{A, B, C, D\}$.}
+    \label{fig:closedloop_identification}
+\end{figure}
+
+\subsubsection{Open-loop identification}
+As an alternative to closed-loop identification, open-loop identification can be performed by applying a PRBS signal around a manually found operating point. This approach requires some tuning of the PRBS amplitude and switching rate so that the pressure stays near the operating point during the experiment. The input-output data collected from the open-loop experiment is then used with the \texttt{n4sid} method to estimate the state-space matrices. Open-loop identification avoids the correlation between input and noise that feedback introduces, and therefore gives a more direct estimate of the system dynamics, but it is harder to carry out because the pressure drifts away from the operating point without feedback.
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            minimum height=1.1cm, minimum width=1.2cm, align=center
+        },
+        plant/.style ={block, minimum width=2.2cm, fill=orange!10, draw=orange!70!black},
+        ident/.style ={block, minimum width=2.2cm, fill=blue!7, draw=blue!60!black},
+        sum/.style   ={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=5mm},
+        sign/.style  ={font=\scriptsize, inner sep=1pt},
+        flow/.style  ={->, line width=0.7pt},
+        line/.style  ={line width=0.7pt},
+        data/.style  ={->, line width=0.7pt, dashed},
+        dot/.style   ={circle, fill, inner sep=1.3pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+    ]
+        % --- Open loop ---
+        \node (du) {$\delta u(k)$};
+        \node[grouplabel, above=0pt of du] {PRBS};
+        \node[sum,   right=1.0cm of du]    (sum)   {};
+        \node[below=1.0cm of sum]          (u0)    {$u_0$};
+        \node[grouplabel, below=0pt of u0] {operating point};
+        \node[plant, right=2.4cm of sum]   (plant) {\textbf{EQ-DA}};
+        \coordinate[right=0.8cm of plant]  (ytap);
+        \coordinate (utap) at ($(sum.east)!0.5!(plant.west)$);
+
+        % --- Identification ---
+        \node[ident] at ($(utap)!0.5!(ytap)+(0,2.0)$) (n4sid) {\texttt{n4sid}};
+
+        % --- Summation signs ---
+        \node[sign] at ($(sum.west)+(-0.2,0.25)$)   {$+$};
+        \node[sign] at ($(sum.south)+(-0.25,-0.2)$) {$+$};
+
+        % --- Forward connections ---
+        \draw[flow] (du) -- (sum);
+        \draw[flow] (u0) -- (sum.south);
+        \draw[flow] (sum) -- node[above, pos=0.25] {$u(k)$} (plant);
+        \draw[line] (plant) -- (ytap);
+        \draw[flow] (ytap) -- ++(0.8,0) node[right] {$y(k)$};
+
+        % --- Recorded data to identification ---
+        \node[dot] at (utap) {};
+        \node[dot] at (ytap) {};
+        \draw[data] (utap) |- (n4sid.west);
+        \draw[data] (ytap) |- (n4sid.east);
+
+        % --- Identified model ---
+        \draw[flow] (n4sid) -- ++(0,1.0) node[above] {$\{A, B, C, D\}$};
+    \end{tikzpicture}
+    \caption{Open-loop identification of the EQ-DA. A PRBS perturbation
+    $\delta u(k)$ is superimposed on a manually found operating-point input $u_0$.
+    No controller is present, so the PRBS amplitude must be kept small enough to
+    keep the pressure near its operating point. The applied input
+    $u(k) = u_0 + \delta u(k)$ and the measured output $y(k)$ are recorded (dashed)
+    and passed to \texttt{n4sid}, which estimates the state-space matrices
+    $\{A, B, C, D\}$.}
+    \label{fig:openloop_identification}
+\end{figure}
+
+\newpage
+\subsubsection{State interpretation}
+\label{sec:state_interpretation}
+When identification starts from a physical (white-box) model, the identified states correspond to physical quantities such as pressures or flows. For the EQ-DA no such model is used: \texttt{n4sid} produces a black-box model whose states are an arbitrary linear combination of the underlying physical quantities and cannot be interpreted directly. Only the input-output behaviour is meaningful. A consequence is that state weights in the LQR cost (Section~\ref{sec:lqr}) have no direct physical meaning, which is one reason to weight the output instead (see the remark after Equation~\eqref{eq:weight}).
+
+\newpage
+\subsection{Kalman observer}
+After finding the state-space model, a state observer can be designed to estimate the system states from the measured output and the applied control input. The observer provides an estimate of the internal states, which are not directly measurable, so that feedback control can be based on these estimated states. The observer also filters measurement noise.
+
+Different types of state observers can be designed. In this report, a Kalman observer is designed based on the identified state-space model. The Kalman filter is an optimal state estimator that minimizes the estimation error covariance, given the process noise and measurement noise covariances. The estimate $\hat{x}(k)$ converges towards the true state $x(k)$ of Figure~\ref{fig:control_architecture}, but a residual estimation error remains because of noise and model error. In predictor form, the Kalman filter equations are:
+\begin{equation}
+\begin{aligned}
+\hat{x}[k+1] &= A \hat{x}[k] + B u[k] + L (y[k] - \hat{y}[k]) \\
+\hat{y}[k] &= C \hat{x}[k] + D u[k]
+\end{aligned}
+\label{eq:kalman}
+\end{equation}
+where $L$ is the Kalman gain matrix, computed by solving the discrete-time algebraic Riccati equation (function \texttt{dlqe} in \texttt{python-control}, which returns the gain for this predictor form). The Kalman gain $L$ determines how much weight is given to the output prediction error when updating the state estimate $\hat{x}[k]$. The estimate $\hat{x}[k]$ is used for feedback in the LQR and LQI controllers.
+
+\newpage
+\subsection{State-feedback controller design}
+\subsubsection{LQR control}
+\label{sec:lqr}
+First, an LQR controller is designed based on the identified state-space model. The LQR control law is
+\begin{equation}
+u[k] = -K x[k]
+\label{eq:lqr}
+\end{equation}
+where $K$ is the gain matrix obtained by solving the discrete-time algebraic Riccati equation. The Riccati equation is solved using the \texttt{dlqr} function from the \texttt{python-control} package, which computes the gain $K$ that minimizes the cost function
+\begin{equation}
+J = \sum_{k=0}^{\infty} \left(x[k]^T Q x[k] + u[k]^T R u[k]\right)
+\end{equation}
+where $Q$ and $R$ are weighting matrices that penalize deviations of the state and control effort, respectively. Their ratio sets the behaviour from conservative to aggressive and can be adjusted with a slider.
+
+However, the LQR controller does not guarantee zero steady-state error when tracking a reference signal. To address this, an error integrator is added:
+\begin{equation}
+z[k+1] = z[k] + T_s\left(r[k] - y[k]\right)
+\label{eq:integrator}
+\end{equation}
+where $T_s$ is the sampling time, $r[k]$ is the reference signal, and $y[k]$ is the output. The integrator state $z[k]$ accumulates the error between the reference and the output, so that the controller removes any steady-state error. This results in an LQI controller.
+
+\subsubsection{LQI control}
+The LQI controller augments the state-space model with the integrator of Equation~\eqref{eq:integrator}. The augmented state vector $\tilde{x}[k]$ is defined as:
+\begin{equation}
+\tilde{x}[k] = \begin{bmatrix} x[k] \\ z[k] \end{bmatrix}.
+\end{equation}
+The augmented system dynamics are given by:
+\begin{equation}
+\begin{aligned}
+\tilde{x}[k+1] &= \tilde{A} \tilde{x}[k] + \tilde{B} u[k] + \tilde{E} r[k] \\
+y[k] &= \tilde{C} \tilde{x}[k] + \tilde{D} u[k]
+\end{aligned}
+\end{equation}
+where, for a single output,
+\begin{equation}
+\tilde{A} = \begin{bmatrix} A & 0 \\ -C \cdot T_s & 1 \end{bmatrix}, \quad
+\tilde{B} = \begin{bmatrix} B \\ -D \cdot T_s \end{bmatrix}, \quad
+\tilde{C} = \begin{bmatrix} C & 0 \end{bmatrix}, \quad
+\tilde{D} = D, \quad
+\tilde{E} = \begin{bmatrix} 0 \\ T_s \end{bmatrix}.
+\label{eq:augmented}
+\end{equation}
+The control law for the LQI controller is:
+\begin{equation}
+u[k] = -\tilde{K} \tilde{x}[k] = -K_x x[k] - K_i z[k].
+\end{equation}
+The gain $\tilde{K}$ minimizes a cost function for the augmented system:
+\begin{equation}
+J = \sum_{k=0}^{\infty} \left(\tilde{x}[k]^T \tilde{Q}_{LQI} \tilde{x}[k] + u[k]^T \tilde{R}_{LQI} u[k]\right)
+\end{equation}
+where
+\begin{equation}
+\tilde{Q}_{LQI} = \begin{bmatrix} Q & 0 \\ 0 & q_z \end{bmatrix}, \quad
+\tilde{R}_{LQI} = R, \quad q_z = 10^3 \cdot \text{speed}.
+\label{eq:weight}
+\end{equation}
+The parameter $\text{speed}$ determines the relative importance of eliminating the tracking error. A larger value increases the emphasis on reference tracking and removes the error faster, at the cost of more control effort and less robustness. In the implementation $Q = 10^3 I_n$ and $R = 10^{-3}$ (Algorithm~\ref{alg:offline}). Because the states are not physical (Section~\ref{sec:state_interpretation}), an alternative is $Q = q\,C^T C$, which weights the predicted pressure instead of the abstract states and makes the slider setting easier to interpret.
+
+$\tilde{K}$ is obtained by solving the discrete-time algebraic Riccati equation for the augmented system and partitioned as $\tilde{K} = [K_x \;\, K_i]$. The resulting controller combines optimal state-feedback regulation with integral action, giving good transient performance and zero steady-state tracking error.
+
+\paragraph{LQI anti-windup}
+To prevent integrator windup, conditional integration is used. When the unsaturated control signal is outside the actuator range $[0, u_{\max}]$, the integrator is only updated if this moves the control signal back towards the range; otherwise it is frozen. In addition, the integrator state is clamped to $\pm z_{\max}$. See Algorithm~\ref{alg:online} for the exact rule. Note that this scheme only acts on valve-position limits, not on choked flow (Section~\ref{sec:setpoint_filter}).
+
+\paragraph{Kalman observer}
+The LQI controller uses the estimated states $\hat{x}[k]$ from the Kalman observer instead of the true states $x[k]$. The control law is therefore:
+\begin{equation}
+u[k] = -\tilde{K} \begin{bmatrix} \hat{x}[k] \\ z[k] \end{bmatrix}.
+\end{equation}
+
+\subsection{Setpoint filtering}
+\label{sec:setpoint_filter}
+Saturation occurs when the controller asks for more than the actuator can deliver, which can lead to integrator windup. This happens not only when the requested valve opening is below 0\% or above 100\%, but also when the valve is moved further while the flow is already choked. The latter occurs when the reference pressure is changed faster than the system can follow, so the controller demands an action beyond the physical capabilities of the valve. This can result in a temporary loss of control.
+
+To mitigate this, an optional setpoint filter smooths the reference signal before it is fed to the controller. The setpoint filter is a first-order low-pass filter with a time constant $\tau$ based on the identified system dynamics. During the identification experiment, the time constants of the inflow and outflow segments are estimated as functions of pressure ($\tau_{in}(p)$ and $\tau_{out}(p)$). These time constants set the setpoint filter, so that the reference signal changes at a rate the system can physically follow without saturation or integrator windup. This keeps the controller within the physical limits of the system and improves stability and performance.
+
+\subsection{Inner versus outer loop}
+\label{sec:inner_vs_outer_loop}
+The strategy described above can be applied to both the inner and outer control loops of the EQ-DA system. The inner loop typically controls the fast reference pressure, while the outer loop controls a slower variable, such as forward pressure or flow. The inner loop is designed to stabilize the system and reject disturbances quickly, while the outer loop ensures accurate tracking of the desired setpoint over a longer time horizon. The design of both loops follows the same principles of state-space modelling, observer design, and LQI controller synthesis. 
+\subsubsection{Cascade control}
+\label{sec:cascade_control}
+Implementation of this strategy leads to cascade control. This strategy is shown in Figure~\ref{fig:cascade_lqi}, where the inner loop is nested within the outer loop, allowing for coordinated control of the EQ-DA system.
+
+\begin{figure}[ht]
+    \centering
+    \resizebox{\linewidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            minimum height=1.1cm, minimum width=1.2cm, align=center
+        },
+        plant/.style ={block, minimum width=2.2cm, fill=orange!10, draw=orange!70!black},
+        ctrl/.style  ={block, fill=green!8,   draw=green!45!black},
+        obs/.style   ={block, minimum width=2.2cm, fill=blue!7, draw=blue!60!black},
+        sum/.style   ={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=5mm},
+        sign/.style  ={font=\scriptsize, inner sep=1pt},
+        group/.style ={draw=gray!70, dashed, rounded corners=6pt, inner sep=8pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+        flow/.style  ={->, line width=0.7pt},
+        line/.style  ={line width=0.7pt},
+        dot/.style   ={circle, fill, inner sep=1.3pt},
+    ]
+        % =========================================================
+        % Forward path
+        % =========================================================
+        % --- Outer LQI (forward pressure) ---
+        \node (r) {$setpoint_{\mathrm{outer}}^{\ast}(k)$};
+        \node[sum,  right=0.9cm of r]      (s1o)    {};
+        \node[ctrl, right=1.0cm of s1o]    (into)   {Integrator};
+        \node[ctrl, right=1.0cm of into]   (kio)    {$K_i^{\mathrm{outer}}$};
+        \node[sum,  right=0.9cm of kio]    (s2o)    {};
+
+        % --- Inner LQI (reference pressure) ---
+        \node[sum,  right=2.3cm of s2o]    (s1i)    {};
+        \node[ctrl, right=1.0cm of s1i]    (inti)   {Integrator};
+        \node[ctrl, right=1.0cm of inti]   (kii)    {$K_i^{\mathrm{ref}}$};
+        \node[sum,  right=0.9cm of kii]    (s2i)    {};
+        \node[plant, right=1.5cm of s2i]   (eqda)   {\textbf{EQ-DA}};
+        \coordinate[right=1.0cm of eqda]   (ytapi);
+
+        % --- Forward-pressure side ---
+        \node[plant, right=1.5cm of ytapi] (proc)   {\textbf{Equilibar}};
+        \coordinate[right=0.8cm of proc]   (ytapo);
+
+        % --- Observers and state-feedback gains ---
+        \node[obs,  below=1.4cm of eqda]   (kfi)    {Kalman\\observer};
+        \node[ctrl] at (s2i |- kfi)        (kxi)    {$K_x^{\mathrm{ref}}$};
+        \node[obs,  below=4.4cm of proc]   (kfo)    {Kalman\\observer};
+        \node[ctrl] at (s2o |- kfo)        (kxo)    {$K_x^{\mathrm{outer}}$};
+
+        % --- Summation signs ---
+        \foreach \s in {s1o, s1i} {
+            \node[sign] at ($(\s.west)+(-0.2,0.25)$)   {$+$};
+            \node[sign] at ($(\s.south)+(-0.25,-0.2)$) {$-$};
+        }
+        \foreach \s in {s2o, s2i} {
+            \node[sign] at ($(\s.west)+(-0.2,0.25)$)   {$-$};
+            \node[sign] at ($(\s.south)+(-0.25,-0.2)$) {$-$};
+        }
+
+        % --- Forward connections ---
+        \draw[flow] (r) -- (s1o);
+        \draw[flow] (s1o)  -- node[above] {$e_{\mathrm{outer}}$} (into);
+        \draw[flow] (into) -- node[above] {$z_{\mathrm{outer}}$} (kio);
+        \draw[flow] (kio)  -- (s2o);
+        \draw[flow] (s2o)  -- node[above, align=center] {$p_{\mathrm{ref}}^{\ast}(k)$} (s1i);
+        \draw[flow] (s1i)  -- node[above] {$e_{\mathrm{ref}}$} (inti);
+        \draw[flow] (inti) -- node[above] {$z_{\mathrm{ref}}$} (kii);
+        \draw[flow] (kii)  -- (s2i);
+        \draw[flow] (s2i)  -- node[above, pos=0.35] {$u(k)$} (eqda);
+        \draw[line] (eqda) -- (ytapi);
+        \draw[flow] (ytapi) -- node[above, pos=0.55] {$p_{\mathrm{ref}}(k)$} (proc);
+        \draw[line] (proc) -- (ytapo);
+        \draw[flow] (ytapo) -- ++(0.8,0) node[right] {$measurement_{\mathrm{outer}}(k)$};
+
+        % =========================================================
+        % Inner loop: observer, state feedback, output feedback
+        % =========================================================
+        \coordinate (utap) at ($(s2i.east)!0.62!(eqda.west)$);
+        \coordinate (uin)  at ($(kfi.north)+(-0.5,0)$);
+        \node[dot] at (utap) {};
+        \draw[flow] (utap) |- ($(uin)+(0,0.55)$) -- (uin);
+        \node[dot] at (ytapi) {};
+        \node[dot] at (ytapi |- kfi) {};
+        \draw[flow] (ytapi |- kfi) -- (kfi.east);
+        \draw[flow] (kfi) -- node[above] {$\hat{x}_{\mathrm{ref}}$} (kxi);
+        \draw[flow] (kxi) -- (s2i);
+
+        \coordinate (fbi) at ($(kfi.south)+(0,-0.9)$);
+        \node[dot] at (ytapi |- fbi) {};
+        \draw[flow] (ytapi) -- (ytapi |- fbi) -| (s1i.south);
+
+        % =========================================================
+        % Outer loop: observer, state feedback, output feedback
+        % =========================================================
+        % Observer input: measured reference pressure (as in identification)
+        \coordinate (uino) at ($(kfo.north)+(-0.75,0)$);
+        \coordinate (ubend) at ($(fbi)$);
+        \draw[flow] (ytapi |- fbi) -- (ytapi |- ubend) -| (uino);
+        % Observer output measurement
+        \node[dot] at (ytapo) {};
+        \node[dot] at (ytapo |- kfo) {};
+        \draw[flow] (ytapo |- kfo) -- (kfo.east);
+        \draw[flow] (kfo) -- node[above, pos=0.93] {$\hat{x}_{\mathrm{outer}}$} (kxo);
+        \draw[flow] (kxo) -- (s2o);
+
+        \coordinate (fbo) at ($(kfo.south)+(0,-0.9)$);
+        \draw[flow] (ytapo) -- (ytapo |- fbo) -| (s1o.south);
+
+        % =========================================================
+        % Grouping frames
+        % =========================================================
+        \begin{scope}[on background layer]
+            \node[group, fit=(s1o)(kio)(s2o)(kxo),
+                  label={[grouplabel]above:Outer LQI (e.g., forward pressure)}] {};
+            \node[group, fit=(s1i)(kii)(s2i)(kxi)(eqda)(kfi),
+                  label={[grouplabel]above:Inner LQI loop (EQ-DA reference pressure)}] {};
+        \end{scope}
+    \end{tikzpicture}
+    }%
+    \caption{Cascade LQI control of an EQ-DA. The outer LQI controller
+    compares the outer-parameter setpoint $setpoint_{\mathrm{outer}}^{\ast}(k)$ with the
+    measured outer-parameter $measurement_{\mathrm{outer}}(k)$ and computes the setpoint
+    $p_{\mathrm{ref}}^{\ast}(k)$ for the inner loop,
+    $p_{\mathrm{ref}}^{\ast}(k) = -K_x^{\mathrm{outer}}\hat{x}_{\mathrm{outer}}(k) - K_i^{\mathrm{outer}} z_{\mathrm{outer}}(k)$.
+    The inner LQI controller tracks this setpoint by adjusting the
+    valve signal $u(k)$ of the EQ-DA. Each loop has its own Kalman observer: the
+    inner observer uses $u(k)$ and $p_{\mathrm{ref}}(k)$, while the outer observer
+    uses the measured output parameter $measurement_{\mathrm{outer}}(k)$ and
+    $p_{\mathrm{ref}}(k)$ as an input, consistent with the identification of the
+    outer model.}
+    \label{fig:cascade_lqi}
+\end{figure}
+
+Eventually, system identification yields a single state-space model with states describing the inner-loop dynamics and states describing the outer-loop dynamics. Any interaction between the loops is then captured in the same model.
+
+\newpage
+\section{Results: internal loop}
+\label{sec:internal_loop}
+An EQ-DA was connected to an upstream pressure of 25~bar. A 100~micron flow restrictor was placed on the reference pressure side, so that the inlet valve is the primary control element and controls the pressure against a constant leak. The objective is to design a single-valve LQI controller.
+% TODO: the figures label the controlled valve "Valve B (outflow)", while this text says inlet valve. Make the labels consistent.
+
+\subsection{Open-loop data collection}
+An open-loop identification experiment was conducted to obtain a state-space model of the internal EQ-DA dynamics. The experiment, sampled at $T_s = 5$~ms, consisted of four consecutive phases:
+\begin{enumerate}
+    \item \textbf{Inflow (2~s):} the inlet valve was fully opened. The resulting pressure rise is used to estimate the inflow time constant.
+    \item \textbf{Open-loop PRBS excitation (10~s):} a PRBS signal with an amplitude of $\pm 5\%$ was applied around a manually determined operating point of 52.5\% valve opening. The resulting average reference pressure was approximately 13~bar. % CHECK: the text previously said 10 bar; Figure 5 shows about 12-14 bar.
+    \item \textbf{Pressure build-up (2~s):} the inlet valve was fully opened again to bring the system to maximum pressure.
+    \item \textbf{Outflow (8~s):} the outlet valve was opened. The resulting pressure decay is used to estimate the outflow time constant.
+\end{enumerate}
+The \texttt{n4sid} method was applied to the input-output data from the PRBS phase to estimate the state-space matrices $A$, $B$, $C$, and $D$, with the input expressed relative to the operating point. Based on the singular values, a fourth-order model was selected. The identified model forms the basis for the observer and controller design in the following sections.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[width=\textwidth]{figures/open_loop_signal.svg}
+    \caption{Reference pressure (top) and valve opening (bottom) during the open-loop identification experiment. First, the inlet valve is fully opened and the pressure rises. Then, a PRBS signal is applied around an operating point of 52.5\% valve opening, resulting in a fluctuating reference pressure of approximately 13~bar. After the PRBS phase, the inlet valve is fully opened again to build up pressure, followed by opening the outlet valve to let the pressure decay. The inflow and outflow segments are used to estimate the time constants for setpoint filtering, while the PRBS segment is used for system identification with \texttt{n4sid}.}
+    \label{fig:identification_results}
+\end{figure}
+
+\subsection{State-space model identification}
+\subsubsection{System order}
+The singular values of the Hankel matrix obtained from \texttt{n4sid} are shown in Figure~\ref{fig:eigenvalues}. The first singular value is dominant, and there is a drop after the fourth value, after which the singular values stay roughly constant at noise level. A fourth-order model is therefore selected for further analysis and controller design.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[width=0.7\textwidth]{figures/eigenvalues.svg}
+    % TODO: y-axis label in the figure says "Eigenvalue"; should be "Singular value".
+    \caption{Singular values of the Hankel matrix obtained from \texttt{n4sid}. There are four significant singular values; from the fifth onwards the values are roughly constant at noise level, so higher-order models would not add significant information.}
+    \label{fig:eigenvalues}
+\end{figure}
+
+\subsubsection{Identified state-space model}
+The identified matrices $A$, $B$, $C$, and $D$ are:
+% TODO: state the units of u and y here (valve % or DAC counts 0-20000; bar).
+% Note: the static gain of this model is about 15 bar per unit of u, which only
+% fits if u is in % of valve opening, while Algorithm 1 uses counts. Check that
+% the model and the controller use the same input scaling.
+\begin{equation}
+\begin{aligned}
+A &= \begin{bmatrix}
+ 0.999281798 & -0.0101576518 &  0.00542226814 & -0.000460844576 \\
+-0.000165798244 &  0.987789640 &  0.192224925 & -0.0184817195 \\
+-0.00190412814 & -0.0379144833 &  0.171966249 & -0.224236810 \\
+ 0.000420946443 &  0.00176421455 &  0.250587201 &  0.940164238
+\end{bmatrix}, \\[4pt]
+B &= \begin{bmatrix}
+-1.00134 \times 10^{-3} \\
+ 3.6299 \times 10^{-4} \\
+-6.35406 \times 10^{-3} \\
+ 1.44084 \times 10^{-3}
+\end{bmatrix}, \\[4pt]
+C &= \begin{bmatrix}
+-11.8959432 & -1.24191249 & 1.45765712 & 0.00753784934
+\end{bmatrix}, \text{ and}\\[4pt]
+D &= \begin{bmatrix} 1.39101423 \times 10^{-5} \end{bmatrix}.
+\end{aligned}
+\label{eq:identified_model}
+\end{equation}
+The eigenvalues of $A$ are 0.266, 0.849, 0.985 and 0.9996, all inside the unit circle, so the identified model is stable. With $T_s = 5$~ms they correspond to time constants of about 4~ms, 31~ms, 0.32~s and 13~s. The slowest pole is close to an integrator: without feedback the pressure drifts slowly and is very sensitive to the valve opening, which is why the operating point is hard to hold open-loop. Because this time constant is longer than the 10~s PRBS segment, it is poorly determined by this experiment; a longer PRBS segment would improve it.
+
+The direct feedthrough $D$ is negligible and physically implausible (the valve cannot change the pressure instantaneously); it can be fixed to zero in \texttt{n4sid}.
+
+Each repetition of the identification experiment yields slightly different matrices because of variations in experimental conditions and noise. The input-output behaviour should nevertheless remain consistent.
+% TODO: add model validation: fit (%) on a separate validation data set, residual
+% analysis, and a comparison of models from repeated experiments.
+
+\newpage
+\subsection{Maximum inflow and outflow time constants}
+The inflow and outflow time constants are estimated from the pressure rise and decay segments of the open-loop identification experiment. A single first-order exponential fit to the entire inflow or outflow segment did not fit well, so the segments were divided into 1~bar pressure bands and a first-order exponential was fitted to each band. The resulting time constants are shown in Figure~\ref{fig:time_constants}. The inflow time constant is about 0.45--0.65~s over most of the range and rises steeply to about 1.3~s as the pressure approaches the 25~bar supply pressure. The outflow time constant is larger, about 0.85--1.3~s, and increases towards low pressure. In both cases the time constant grows as the pressure approaches the end value of the segment. Setpoint changes close to the upstream pressure, or close to zero, should therefore be filtered more than setpoint changes in the middle of the operating range.
+
+These time constants are used to define the setpoint filter for the LQI controller, so that the reference signal changes at a rate the system can physically follow without saturation or integrator windup.
+
+\begin{figure}[ht]
+    \centering
+    \includesvg[width=\textwidth]{figures/tau_vs_pressure.svg}
+    \caption{Estimated inflow and outflow time constants as functions of pressure, obtained by fitting a first-order exponential to 1~bar pressure bands of the inflow and outflow segments. The inflow time constant is about 0.45--0.65~s in the mid-range and rises to about 1.3~s near the supply pressure; the outflow time constant ranges from about 0.85~s at high pressure to about 1.3~s at low pressure.}
+    \label{fig:time_constants}
+\end{figure}
+
+\newpage
+\subsection{Closed-loop LQI control}
+\subsubsection{Single setpoint, speed = 5}
+Figure~\ref{fig:single_setpoint} shows the closed-loop response of the EQ-DA under LQI control with a speed factor of 5 (see Equation~\eqref{eq:weight}). The reference pressure is set to 10~bar. At the start, the integrator state builds up until the valve reaches its opening point. The controller then drives the pressure to the setpoint, converging to 10~bar after about 1.5~s with a small overshoot. The bottom graph shows the four estimated states and the integrator state.
+% Note: x2 settles at about -2.7 instead of 0. This is expected when the observer is
+% fed the absolute valve signal u while the model was identified on u - u0 (see Algorithm 2).
+\begin{figure}[ht!]
+    \centering
+    \includesvg[width=\textwidth]{figures/single_setpoint.svg}
+    \caption{Closed-loop LQI control of the EQ-DA with a single 10~bar setpoint and a speed factor of 5: pressure (top), valve opening (middle) and estimated states (bottom).}
+    \label{fig:single_setpoint}
+\end{figure}
+
+\clearpage
+\subsubsection{Multiple setpoints, speed = 5, 50, 500, 5000}
+The setpoint is now stepped between 10 and 12~bar, with speed factors of 5, 50, 500 and 5000 (see Equation~\eqref{eq:weight}). The speed factor sets the aggressiveness of the controller: higher values give a faster response but potentially more overshoot and oscillation. The results are shown in Figure~\ref{fig:multiple_setpoints}. Because the speed factor is a single tuning parameter, it can be set with a slider in the GUI to trade speed against robustness.
+
+The figure shows that a speed factor of about 500 gives fast tracking without significant overshoot. At a speed factor of 5000 the controller is too aggressive: on a decreasing step the integrator keeps integrating and closes the valve while the pressure is already decaying at its maximum rate. This leads to a large undershoot of about 0.9~bar. The effect is strongest on decreasing steps, where the outflow time constant (Figure~\ref{fig:time_constants}) is larger than the inflow time constant.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[width=\textwidth]{figures/multiple_setpoints.svg}
+    \caption{Closed-loop LQI control of the EQ-DA with setpoint steps between 10 and 12~bar for speed factors of 5, 50, 500 and 5000: pressure (top) and valve opening (bottom).}
+    \label{fig:multiple_setpoints}
+\end{figure}
+
+\clearpage
+\subsection{Setpoint filtering}
+Figure~\ref{fig:setpoint_filtering} shows setpoints alternating between 1 and 2~bar, with a speed factor of 500. Without filtering, a decreasing setpoint leads to the maximum pressure decay rate being reached. The controller keeps integrating and closes the valve completely while the pressure cannot fall any faster. This causes integrator windup and a temporary loss of control, resulting in an undershoot to about 0.5~bar. With the setpoint filter of Section~\ref{sec:setpoint_filter}, the reference is smoothed with a first-order low-pass filter whose time constant follows the identified dynamics, so the setpoint does not change faster than the system can follow. The filter is bypassed once the pressure is within $\pm10\%$ of the setpoint.
+
+The filter works well for decreasing setpoints but less well for increasing setpoints. It largely prevents over- and undershoot, at the cost of a slower response, and does not guarantee optimal performance. Different filter designs can be explored to obtain better performance, closer to maximum speed without saturation and windup.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[width=\textwidth]{figures/multiple_setpoints_low_setpoint.svg}
+    \caption{Effect of setpoint filtering on the closed-loop response of the EQ-DA under LQI control, with the reference alternating between 1 and 2~bar and a speed factor of 500. Without setpoint filtering (blue), the controller winds up during the decreasing setpoint, leading to a temporary loss of control and an undershoot. With filtering (green), the response is smoother and saturation and windup are avoided, at the cost of a slower response.}
+    \label{fig:setpoint_filtering}
+\end{figure}
+
+% TODO: add a comparison with the current PID controller on the same setpoint
+% profile (rise time, overshoot, settling time, IAE).
+
+\clearpage
+\section{Results: external loop}
+\subsection{Closed-loop forward-pressure control}
+In this section, a forward-pressure setup is created as shown in Figure~\ref{fig:forward_pressure_setup}. The forward pressure is measured with a pressure sensor and controlled by adjusting the reference pressure of the EQ-DA. The objective is to design a second LQI controller that controls the forward pressure by adjusting the reference pressure setpoint of the inner loop. The main objective is to achieve a good balance between speed and robustness of the outer loop, which should be controlled by the same speed factor as the inner loop. This is a tuning parameter that can be implemented as a slider in the GUI. 
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2mm]},
+        gas/.style    ={line width=1.0pt},
+        refline/.style={line width=1.0pt, draw=orange!70!black},
+        signal/.style ={->, line width=0.6pt, dashed, draw=blue!60!black},
+        ctrl/.style   ={draw=green!45!black, fill=green!8, rounded corners=3pt,
+                        line width=0.6pt, align=center,
+                        minimum height=0.8cm, minimum width=5.4cm},
+        sensor/.style ={draw=blue!60!black, fill=blue!7, circle, line width=0.6pt,
+                        minimum size=7mm, inner sep=0pt, font=\scriptsize\bfseries},
+        act/.style    ={draw, fill=white, line width=0.6pt, minimum size=3.2mm,
+                        inner sep=0pt},
+        lbl/.style    ={font=\footnotesize},
+        dot/.style    ={circle, fill, inner sep=1.3pt},
+        valve/.pic={
+            \draw[line width=0.6pt, fill=white]
+                (-0.28,-0.18) -- (0.28,0.18) -- (0.28,-0.18) -- (-0.28,0.18) -- cycle;
+        },
+        orifice/.pic={
+            \fill[white] (-0.1,-0.25) rectangle (0.1,0.25);
+            \draw[line width=0.9pt] (-0.07,-0.25) -- (-0.07,0.25)
+                                    (0.07,-0.25)  -- (0.07,0.25);
+        },
+    ]
+        % ---------------------------------------------------------
+        % Grid: main vertical axis at x = 4.5
+        %   y = 0    supply / process line
+        %   y = 4    reference chamber (between valve A and B)
+        % ---------------------------------------------------------
+        \def\xA{2.3}  \def\xP{4.5}  \def\xR{4.5}  \def\xB{6.7}  \def\xD{1.2}
+        \def\yS{0}    \def\yM{4.0}  \def\yL{2.2}
+
+        % =========================================================
+        % EQ-DA
+        % =========================================================
+        \draw[draw=orange!70!black, fill=orange!4, rounded corners=5pt,
+              line width=0.7pt] (1.0,3.0) rectangle (8.0,6.8);
+        \node[anchor=south west, font=\bfseries] at (1.0,6.8) {EQ-DA};
+        \node[ctrl] (ctrl) at (\xR,6.0)
+            {Controller\\[-2pt]\footnotesize inner LQI ($p_{\mathrm{ref}}$) + outer LQI ($p_{\mathrm{fwd}}$)};
+
+        % Valve A -> reference chamber -> valve B -> vent
+        \draw[refline] (\xA+0.28,\yM) -- (\xB-0.28,\yM);
+        \draw[gas, ->] (\xB+0.28,\yM) -- (9.0,\yM) node[above left, lbl] {vent};
+        \pic at (\xA,\yM) {valve};
+        \pic at (\xB,\yM) {valve};
+        \node[lbl, below=0.2cm] at (\xA,\yM) {valve A (inlet)};
+        \node[lbl, below=0.2cm] at (\xB,\yM) {valve B (outlet)};
+
+        % Actuators
+        \node[act] (actA) at (\xA,4.7) {};
+        \node[act] (actB) at (\xB,4.7) {};
+        \draw[line width=0.6pt] (\xA,\yM) -- (actA) (\xB,\yM) -- (actB);
+        \draw[signal] (actA |- ctrl.south) -- (actA);
+        \draw[signal] (actB |- ctrl.south) -- (actB);
+
+        % Internal pressure sensor
+        \node[sensor] (PTi) at (\xP,4.7) {PT};
+        \draw[refline] (\xP,\yM) -- (PTi);
+        \node[dot] at (\xP,\yM) {};
+        \node[lbl, right=1pt of PTi] {$p_{\mathrm{ref}}$};
+        \draw[signal] (PTi) -- (PTi |- ctrl.south);
+
+        % =========================================================
+        % Reference pressure to the dome, with leak
+        % =========================================================
+        \node[dot] at (\xR,\yM) {};
+        \draw[refline, ->] (\xR,\yM) -- (\xR,0.5);
+        \node[lbl, right, text=orange!50!black] at (\xR,2.6) {$p_{\mathrm{ref}}$};
+        \node[dot] at (\xR,\yL) {};
+        \draw[refline, ->] (\xR,\yL) -- (\xA-1.0,\yL) node[left, lbl, text=black] {atm.};
+        \pic at (\xA,\yL) {orifice};
+        \node[lbl, above=0.25cm] at (\xA,\yL) {leak};
+
+        % =========================================================
+        % Equilibar
+        % =========================================================
+        \draw[draw=gray!50!black, fill=gray!12, line width=0.7pt, rounded corners=2pt]
+            (\xR-1.0,-0.55) rectangle (\xR+1.0,0.5);
+        \node[font=\bfseries\small] at (\xR,-0.03) {Equilibar};
+
+        % Supply: shared by EQ-DA (valve A) and Equilibar
+        \draw[gas] (0.3,\yS) |- (\xA-0.28,\yM);
+        \draw[gas] (-0.6,\yS) -- (\xD-0.28,\yS);
+        \draw[gas, ->] (\xD+0.28,\yS) -- (\xR-1.0,\yS);
+        % Pressure reducer 25 -> 3 bar
+        \pic at (\xD,\yS) {valve};
+        \draw[line width=0.6pt] (\xD,\yS) -- (\xD,0.45);
+        \draw[line width=0.6pt, fill=white]
+            (\xD-0.25,0.45) -- (\xD+0.25,0.45) arc (0:180:0.25) -- cycle;
+        \node[lbl, below=0.2cm, align=center] at (\xD,\yS) {reducer};
+        \node[lbl, above] at (2.5,\yS) {$\approx 3$ bar};
+        \node[dot] at (0.3,\yS) {};
+        \node[lbl, left, align=right] at (-0.6,\yS) {supply\\25 bar};
+
+        % Outlet: forward-pressure measurement, then leak
+        \draw[gas, ->] (\xR+1.0,\yS) -- (9.0,\yS) node[right, lbl] {atm.};
+        \pic at (8.0,\yS) {orifice};
+        \node[lbl, below=0.25cm] at (8.0,\yS) {leak};
+
+        \node[sensor] (PTe) at (\xB,1.0) {PT};
+        \draw[gas] (\xB,\yS) -- (PTe);
+        \node[dot] at (\xB,\yS) {};
+        \node[lbl, left=1pt of PTe] {$p_{\mathrm{fwd}}$};
+
+        % Forward-pressure signal to the controller
+        \draw[signal] (PTe.east) -- (9.6,1.0) |- (ctrl.east);
+
+        % =========================================================
+        % Legend
+        % =========================================================
+        \begin{scope}[shift={(-0.6,-1.3)}]
+            \draw[gas] (0,0) -- (0.7,0);
+            \node[lbl, anchor=west] at (0.8,0) {supply / process gas};
+            \draw[refline] (4.3,0) -- (5.0,0);
+            \node[lbl, anchor=west] at (5.1,0) {reference pressure};
+            \draw[signal, -] (8.4,0) -- (9.1,0);
+            \node[lbl, anchor=west] at (9.2,0) {signal};
+        \end{scope}
+    \end{tikzpicture}
+    \caption{Forward-pressure control set-up. The 25~bar supply feeds the EQ-DA directly and
+    the Equilibar via a pressure reducer that lowers it to 3~bar. Inside the EQ-DA, the reference pressure $p_{\mathrm{ref}}$ is
+    the pressure between the inlet valve (A) and the outlet valve (B); it is
+    measured by the internal pressure transmitter and loads the dome of the
+    Equilibar. A leak on the reference side and a leak downstream of the
+    Equilibar provide a constant outflow. Valve A controls against a constant leak. The forward pressure
+    $p_{\mathrm{fwd}}$ is measured between the Equilibar and the downstream leak
+    and fed back to the EQ-DA controller, which runs the inner LQI loop on
+    $p_{\mathrm{ref}}$ and the outer LQI loop on $p_{\mathrm{fwd}}$
+    (Figure~\ref{fig:cascade_lqi}). Again, the reference pressure is controlled such that the Equilibar maintains the forward-pressure setpoint, while there is a constant leak downstream of the Equilibar.}
+    \label{fig:forward_pressure_setup}
+\end{figure}
+
+\newpage
+\subsubsection{System identification}
+A similar open-loop identification procedure as in Section~\ref{sec:internal_loop} is applied to the forward-pressure control loop. The PRBS reference excites the inner loop, causing the forward pressure to fluctuate. The measured reference-side pressure ($p_{\mathrm{ref}}$) is used as the input to the \texttt{n4sid} algorithm, while the external forward pressure ($p_{\mathrm{fwd}}$) is used as the output. The system appeared to be third order. The state-space matrices $\{A, B, C, D\}$ are estimated. The results are shown in Figure~\ref{fig:forward_pressure_identification}. The identified model is then used to design an LQI controller for the outer loop.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/1_forward_pressure_identification_results.svg}
+    \caption{Identification of the cascade loop with forward-pressure control using an open-loop approach. A PRBS reference $r(k)$ excites the inner loop. The previously designed LQI controller tracks the PRBS reference, causing the forward pressure ($p_{\mathrm{fwd}}$) to fluctuate. The base amplitude of the PRBS reference is determined manually such that the PRBS leads to fluctuations in the forward pressure. The measured reference-side pressure ($p_{\mathrm{ref}}$) is used as the input to the \texttt{n4sid} algorithm, while the external forward pressure ($p_{\mathrm{fwd}}$) is used as the output. Again, the state-space matrices $\{A, B, C, D\}$ are estimated.}
+    \label{fig:forward_pressure_identification}
+\end{figure}
+
+\newpage
+\subsubsection{Closed-loop control}
+Figure~\ref{fig:forward_pressure_closed_loop} shows the closed-loop response of the cascade loop with forward-pressure control. Now two LQI controllers are implemented: one controls the reference pressure of the EQ-DA, while the second controls the forward pressure by adjusting the reference setpoint. The speed factor from Equation~\eqref{eq:weight} is used to tune the aggressiveness of both controllers; in this experiment it is set to 100. The results show that, at the start, the reference pressure must first reach the opening point of the Equilibar. The reference pressure is increased until the Equilibar closes, leading to a decrease in the forward pressure. This can be solved by adding a pressure sensor upstream of the Equilibar. The outer loop then controls the reference pressure to track the forward-pressure setpoint.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/2_forward_pressure_closed_loop_results.svg}
+    \caption{Closed-loop response of the cascade loop with forward-pressure control. Two LQI controllers are implemented: one controlling the reference pressure of the EQ-DA, while the second controls the forward pressure by adjusting the reference setpoint.}
+    \label{fig:forward_pressure_closed_loop}
+\end{figure}
+
+\newpage
+\subsubsection{Different speed settings}
+Similar to the inner loop, the speed factor is the only tuning parameter for the outer loop. The results of several experiments with different speed settings are shown in Figure~\ref{fig:forward_pressure_closed_loop_step_response}. The setpoint is stepped between 1.5 and 2~bar. The results indicate that a higher speed setting leads to a faster response, but eventually also to unstable behaviour. The speed setting can be adjusted in the future with a slider in the GUI.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/3_forward_pressure_closed_loop_step_response.svg}
+    \caption{The LQI controller for the forward pressure is tested with setpoints between 1.5 and 2~bar. Several experiments with different speed settings are performed. The results indicate that a higher speed setting leads to a faster response, but eventually also to unstable behaviour. The speed setting is the only tuning parameter for the LQI controller and can be adjusted in the future with a slider in the GUI.}
+    \label{fig:forward_pressure_closed_loop_step_response}
+\end{figure}
+
+
+\clearpage
+\section{Summary for implementation on EQ-DA hardware}
+The procedure is split into two parts. Algorithm~\ref{alg:offline} covers the steps performed once, before implementation (data collection, identification and controller synthesis). This offline procedure can be performed in the GUI. Algorithm~\ref{alg:online} is the real-time routine executed on the EQ-DA every sample period $T_s$; it implements the LQI control law with anti-windup and can be implemented in the EQ-DA firmware.
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\begin{algorithm}[ht]
+\caption{Prior to implementation (offline) using open-loop identification}\label{alg:offline}
+\begin{algorithmic}[1]
+\Require $T_s = 5$ ms, $u_{\max} = 20\,000$, PRBS base found by experimentation: e.g., $u_0 = 10\,500$,
+         amplitude $1000$, switch probability $0.1$, model order $n = 4$,
+         weights $Q, R$, speed factor, noise covariances $Q_n, R_n$
+\Ensure $A, B, C, D, L, K_x, K_i$, and $\tau_{\text{in}}(p)$, $\tau_{\text{out}}(p)$
+\Procedure{DesignLQIOpenLoop}{}
+  \Statex \textit{Data collection (open-loop, sampled at $T_s$)}
+  \State $u \gets u_{\max}$ for 2 s \Comment{inflow segment}
+  \State $u \gets u_0 \pm 1000$ (PRBS) for 10 s \Comment{identification segment}
+  \State $u \gets u_{\max}$ for 2 s \Comment{build up pressure}
+  \State $u \gets 0$ for 8 s \Comment{outflow segment}
+  \Statex \textit{System identification (PRBS segment only)}
+  \State $\delta u[k] \gets u[k] - u_0$
+  \State Run \texttt{n4sid} on $(\delta u, y)$ with 20 block rows
+  \Statex \textit{Setpoint filter time constants}
+  \State Fit $p(t) = p_\infty + (p_0 - p_\infty)\,e^{-t/\tau}$ on the inflow
+         and outflow segments
+  \For{each 1 bar pressure band of each segment}
+    \State Fit $\tau$ with $p_\infty$ fixed from the full-segment fit
+  \EndFor
+  \State $\tau_{\text{in}}(p), \tau_{\text{out}}(p) \gets$ linear interpolation
+         between band values
+  \Statex \textit{Kalman observer}
+  \State $L \gets \texttt{dlqe}(A, I, C, Q_n, R_n)$, \quad $Q_n = R_n = 10^{-3}$
+         \Comment{predictor-form gain}
+  \Statex \textit{LQI controller}
+  \State $\tilde{A} \gets \begin{bmatrix} A & 0 \\ -C T_s & 1 \end{bmatrix}$,
+         \quad $\tilde{B} \gets \begin{bmatrix} B \\ -D T_s \end{bmatrix}$
+  \State $\tilde{Q} \gets \operatorname{diag}(10^{3} I_n,\; 10^{3}\cdot\text{speed})$, \quad $R \gets 10^{-3}$
+         \Comment{speed sets the aggressiveness}
+  \State $\tilde{K} \gets \texttt{dlqr}(\tilde{A}, \tilde{B}, \tilde{Q}, R)$;
+         \quad partition $\tilde{K} = [K_x \;\, K_i]$
+  \State Store $\{A, B, C, D, K_x, K_i, L, T_s\}$
+  \State Upload parameters onto EQ-DA
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[ht]
+\caption{Real-time LQI control on the EQ-DA (every $T_s$)}\label{alg:online}
+\begin{algorithmic}[1]
+\Require Stored controller parameters $\{A, B, C, D, K_x, K_i, L, T_s\}$, $\tau_{\text{in}}(p)$, $\tau_{\text{out}}(p)$,
+         integrator limit $z_{\max} = 50$; assumes $-K_i > 0$ (more integral gives more valve opening)
+\Procedure{LQIControl}{}
+  \State $\hat{x} \gets 0$, \quad $z \gets 0$, \quad $u \gets 0$
+  \For{40 samples} \Comment{observer warm-up, 200 ms}
+    \State $y \gets$ measured pressure
+    \State $\hat{x} \gets A\hat{x} + Bu + L\,(y - C\hat{x} - Du)$
+  \EndFor
+  \State $r_f \gets y$ \Comment{initialise setpoint filter}
+  \Loop
+    \State $(r, y) \gets$ setpoint and measured pressure
+    \Statex \hspace{\algorithmicindent}\textit{Setpoint filter}
+    \If{$r - y > 0.1\,y$} \Comment{large step up}
+      \State $\alpha \gets T_s / (\tau_{\text{in}}(y) + T_s)$; \quad
+             $r_f \gets r_f + \alpha\,(r - r_f)$
+    \ElsIf{$r - y < -0.1\,y$} \Comment{large step down}
+      \State $\alpha \gets T_s / (\tau_{\text{out}}(y) + T_s)$; \quad
+             $r_f \gets r_f + \alpha\,(r - r_f)$
+    \Else
+      \State $r_f \gets r$
+    \EndIf
+    \Statex \hspace{\algorithmicindent}\textit{Integral action with anti-windup}
+    \State $e \gets r_f - y$
+    \State $z_c \gets \min(\max(z + T_s e,\, -z_{\max}),\, z_{\max})$
+    \State $v \gets -K_x\hat{x} - K_i z$
+    \If{$0 \le v \le u_{\max}$ \textbf{or} $(v > u_{\max} \wedge e < 0)$
+        \textbf{or} $(v < 0 \wedge e > 0)$}
+      \State $z \gets z_c$ \Comment{integrate unless it deepens saturation}
+    \EndIf
+    \Statex \hspace{\algorithmicindent}\textit{Control output}
+    \State $u \gets \min(\max(-K_x\hat{x} - K_i z,\, 0),\, u_{\max})$
+    \State Write $u$ to the valve
+    \Statex \hspace{\algorithmicindent}\textit{Kalman observer (predictor form, Equation~\eqref{eq:kalman})}
+    \State $\hat{x} \gets A\hat{x} + Bu + L\,(y - C\hat{x} - Du)$ \Comment{estimate for next sample}
+    \State Wait until the next sample
+  \EndLoop
+  \State On exit: set valves to the safe state
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+% TODO: the model was identified on du = u - u0, but the observer is fed the absolute u.
+% Consider feeding du = u - u0 to the observer and adding u0 as feedforward to the
+% control output, so the integrator does not have to supply the whole opening point.
+% Also check that |K_i| * z_max can reach u0.
+
+\clearpage
+\section*{Version control}
+\addcontentsline{toc}{section}{Version control}
+
+\begingroup
+\renewcommand{\arraystretch}{1.35}
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\centering\arraybackslash}p{0.14\textwidth} >{\centering\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{gray!15}
+\textbf{Version} & \textbf{Date} & \textbf{Description} \\
+\midrule
+0.1 & August 21, 2026 & Initial draft \\
+0.2 & October 9, 2026 & Included methodological details \\
+0.3 & October 28, 2026 & Included internal loop results \\
+0.4 & November 13, 2026 & Included external loop results; added figure to Section~\ref{sec:inner_vs_outer_loop} \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\end{document}

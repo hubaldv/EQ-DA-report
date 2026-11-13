@@ -9,10 +9,9 @@
 \usepackage{setspace}
 \usepackage{titlesec}
 \usepackage{enumitem}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage{hyperref}
 \usepackage{subcaption}
-\usepackage[table]{xcolor}
 \usepackage{colortbl}
 \usepackage{booktabs}
 \usepackage{makecell}
@@ -25,9 +24,10 @@
 \usetikzlibrary{positioning,arrows.meta,shapes.geometric}
 \usetikzlibrary{positioning,calc,fit,backgrounds}
 
-\usepackage{svg}
 \usepackage{algorithm}% http://ctan.org/pkg/algorithm
 \usepackage{algpseudocode}% http://ctan.org/pkg/algorithmicx
+
+\usepackage{tabularx}
 
 % --------------------
 % Paragraph formatting
@@ -43,7 +43,7 @@
 \newcommand{\ReportSubTitle}{System Identification, State Estimation,\\and Model-Based Control}
 \newcommand{\AuthorName}{Hubald Verzijl}
 \newcommand{\AuthorEmail}{hubald@pressurecontrolsolutions.com}
-\newcommand{\VersionNumber}{0.3}
+\newcommand{\VersionNumber}{0.4}
 \newcommand{\ReportDate}{\today}
 
 \hypersetup{
@@ -53,7 +53,7 @@
     urlcolor=cyan,
     pdftitle={Linear Quadratic Integral Control of an EQ-DA},
     pdfauthor={\AuthorName},
-    pdfkeywords={Pressure, Dynamics, Quattroflow, Equilibar, Report},
+    pdfkeywords={Pressure, Dynamics, EQ-DA, Equilibar, LQI, Report},
 }
 
 % --------------------
@@ -415,6 +415,7 @@ As an alternative to closed-loop identification, open-loop identification can be
 
 \newpage
 \subsubsection{State interpretation}
+\label{sec:state_interpretation}
 When identification starts from a physical (white-box) model, the identified states correspond to physical quantities such as pressures or flows. For the EQ-DA no such model is used: \texttt{n4sid} produces a black-box model whose states are an arbitrary linear combination of the underlying physical quantities and cannot be interpreted directly. Only the input-output behaviour is meaningful. A consequence is that state weights in the LQR cost (Section~\ref{sec:lqr}) have no direct physical meaning, which is one reason to weight the output instead (see the remark after Equation~\eqref{eq:weight}).
 
 \newpage
@@ -488,7 +489,7 @@ where
 \tilde{R}_{LQI} = R, \quad q_z = 10^3 \cdot \text{speed}.
 \label{eq:weight}
 \end{equation}
-The parameter $\text{speed}$ determines the relative importance of eliminating the tracking error. A larger value increases the emphasis on reference tracking and removes the error faster, at the cost of more control effort and less robustness. In the implementation $Q = 10^3 I_n$ and $R = 10^{-3}$ (Algorithm~\ref{alg:offline}). Because the states are not physical (Section~1.3.3), an alternative is $Q = q\,C^T C$, which weights the predicted pressure instead of the abstract states and makes the slider setting easier to interpret.
+The parameter $\text{speed}$ determines the relative importance of eliminating the tracking error. A larger value increases the emphasis on reference tracking and removes the error faster, at the cost of more control effort and less robustness. In the implementation $Q = 10^3 I_n$ and $R = 10^{-3}$ (Algorithm~\ref{alg:offline}). Because the states are not physical (Section~\ref{sec:state_interpretation}), an alternative is $Q = q\,C^T C$, which weights the predicted pressure instead of the abstract states and makes the slider setting easier to interpret.
 
 $\tilde{K}$ is obtained by solving the discrete-time algebraic Riccati equation for the augmented system and partitioned as $\tilde{K} = [K_x \;\, K_i]$. The resulting controller combines optimal state-feedback regulation with integral action, giving good transient performance and zero steady-state tracking error.
 
@@ -508,12 +509,150 @@ Saturation occurs when the controller asks for more than the actuator can delive
 To mitigate this, an optional setpoint filter smooths the reference signal before it is fed to the controller. The setpoint filter is a first-order low-pass filter with a time constant $\tau$ based on the identified system dynamics. During the identification experiment, the time constants of the inflow and outflow segments are estimated as functions of pressure ($\tau_{in}(p)$ and $\tau_{out}(p)$). These time constants set the setpoint filter, so that the reference signal changes at a rate the system can physically follow without saturation or integrator windup. This keeps the controller within the physical limits of the system and improves stability and performance.
 
 \subsection{Inner versus outer loop}
-The strategy described above can be applied to both the inner and outer control loops of the EQ-DA system. The inner loop typically controls the fast reference pressure, while the outer loop controls a slower variable, such as forward pressure or flow. The inner loop is designed to stabilize the system and reject disturbances quickly, while the outer loop ensures accurate tracking of the desired setpoint over a longer time horizon. The design of both loops follows the same principles of state-space modelling, observer design, and LQI controller synthesis.
+\label{sec:inner_vs_outer_loop}
+The strategy described above can be applied to both the inner and outer control loops of the EQ-DA system. The inner loop typically controls the fast reference pressure, while the outer loop controls a slower variable, such as forward pressure or flow. The inner loop is designed to stabilize the system and reject disturbances quickly, while the outer loop ensures accurate tracking of the desired setpoint over a longer time horizon. The design of both loops follows the same principles of state-space modelling, observer design, and LQI controller synthesis. 
+\subsubsection{Cascade control}
+\label{sec:cascade_control}
+Implementation of this strategy leads to cascade control. This strategy is shown in Figure~\ref{fig:cascade_lqi}, where the inner loop is nested within the outer loop, allowing for coordinated control of the EQ-DA system.
+
+\begin{figure}[ht]
+    \centering
+    \resizebox{\linewidth}{!}{%
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2.2mm]},
+        block/.style={
+            draw, rounded corners=3pt, line width=0.6pt,
+            minimum height=1.1cm, minimum width=1.2cm, align=center
+        },
+        plant/.style ={block, minimum width=2.2cm, fill=orange!10, draw=orange!70!black},
+        ctrl/.style  ={block, fill=green!8,   draw=green!45!black},
+        obs/.style   ={block, minimum width=2.2cm, fill=blue!7, draw=blue!60!black},
+        sum/.style   ={draw, circle, line width=0.6pt, inner sep=0pt, minimum size=5mm},
+        sign/.style  ={font=\scriptsize, inner sep=1pt},
+        group/.style ={draw=gray!70, dashed, rounded corners=6pt, inner sep=8pt},
+        grouplabel/.style={font=\footnotesize\itshape, text=gray!40!black},
+        flow/.style  ={->, line width=0.7pt},
+        line/.style  ={line width=0.7pt},
+        dot/.style   ={circle, fill, inner sep=1.3pt},
+    ]
+        % =========================================================
+        % Forward path
+        % =========================================================
+        % --- Outer LQI (forward pressure) ---
+        \node (r) {$setpoint_{\mathrm{outer}}^{\ast}(k)$};
+        \node[sum,  right=0.9cm of r]      (s1o)    {};
+        \node[ctrl, right=1.0cm of s1o]    (into)   {Integrator};
+        \node[ctrl, right=1.0cm of into]   (kio)    {$K_i^{\mathrm{outer}}$};
+        \node[sum,  right=0.9cm of kio]    (s2o)    {};
+
+        % --- Inner LQI (reference pressure) ---
+        \node[sum,  right=2.3cm of s2o]    (s1i)    {};
+        \node[ctrl, right=1.0cm of s1i]    (inti)   {Integrator};
+        \node[ctrl, right=1.0cm of inti]   (kii)    {$K_i^{\mathrm{ref}}$};
+        \node[sum,  right=0.9cm of kii]    (s2i)    {};
+        \node[plant, right=1.5cm of s2i]   (eqda)   {\textbf{EQ-DA}};
+        \coordinate[right=1.0cm of eqda]   (ytapi);
+
+        % --- Forward-pressure side ---
+        \node[plant, right=1.5cm of ytapi] (proc)   {\textbf{Equilibar}};
+        \coordinate[right=0.8cm of proc]   (ytapo);
+
+        % --- Observers and state-feedback gains ---
+        \node[obs,  below=1.4cm of eqda]   (kfi)    {Kalman\\observer};
+        \node[ctrl] at (s2i |- kfi)        (kxi)    {$K_x^{\mathrm{ref}}$};
+        \node[obs,  below=4.4cm of proc]   (kfo)    {Kalman\\observer};
+        \node[ctrl] at (s2o |- kfo)        (kxo)    {$K_x^{\mathrm{outer}}$};
+
+        % --- Summation signs ---
+        \foreach \s in {s1o, s1i} {
+            \node[sign] at ($(\s.west)+(-0.2,0.25)$)   {$+$};
+            \node[sign] at ($(\s.south)+(-0.25,-0.2)$) {$-$};
+        }
+        \foreach \s in {s2o, s2i} {
+            \node[sign] at ($(\s.west)+(-0.2,0.25)$)   {$-$};
+            \node[sign] at ($(\s.south)+(-0.25,-0.2)$) {$-$};
+        }
+
+        % --- Forward connections ---
+        \draw[flow] (r) -- (s1o);
+        \draw[flow] (s1o)  -- node[above] {$e_{\mathrm{outer}}$} (into);
+        \draw[flow] (into) -- node[above] {$z_{\mathrm{outer}}$} (kio);
+        \draw[flow] (kio)  -- (s2o);
+        \draw[flow] (s2o)  -- node[above, align=center] {$p_{\mathrm{ref}}^{\ast}(k)$} (s1i);
+        \draw[flow] (s1i)  -- node[above] {$e_{\mathrm{ref}}$} (inti);
+        \draw[flow] (inti) -- node[above] {$z_{\mathrm{ref}}$} (kii);
+        \draw[flow] (kii)  -- (s2i);
+        \draw[flow] (s2i)  -- node[above, pos=0.35] {$u(k)$} (eqda);
+        \draw[line] (eqda) -- (ytapi);
+        \draw[flow] (ytapi) -- node[above, pos=0.55] {$p_{\mathrm{ref}}(k)$} (proc);
+        \draw[line] (proc) -- (ytapo);
+        \draw[flow] (ytapo) -- ++(0.8,0) node[right] {$measurement_{\mathrm{outer}}(k)$};
+
+        % =========================================================
+        % Inner loop: observer, state feedback, output feedback
+        % =========================================================
+        \coordinate (utap) at ($(s2i.east)!0.62!(eqda.west)$);
+        \coordinate (uin)  at ($(kfi.north)+(-0.5,0)$);
+        \node[dot] at (utap) {};
+        \draw[flow] (utap) |- ($(uin)+(0,0.55)$) -- (uin);
+        \node[dot] at (ytapi) {};
+        \node[dot] at (ytapi |- kfi) {};
+        \draw[flow] (ytapi |- kfi) -- (kfi.east);
+        \draw[flow] (kfi) -- node[above] {$\hat{x}_{\mathrm{ref}}$} (kxi);
+        \draw[flow] (kxi) -- (s2i);
+
+        \coordinate (fbi) at ($(kfi.south)+(0,-0.9)$);
+        \node[dot] at (ytapi |- fbi) {};
+        \draw[flow] (ytapi) -- (ytapi |- fbi) -| (s1i.south);
+
+        % =========================================================
+        % Outer loop: observer, state feedback, output feedback
+        % =========================================================
+        % Observer input: measured reference pressure (as in identification)
+        \coordinate (uino) at ($(kfo.north)+(-0.75,0)$);
+        \coordinate (ubend) at ($(fbi)$);
+        \draw[flow] (ytapi |- fbi) -- (ytapi |- ubend) -| (uino);
+        % Observer output measurement
+        \node[dot] at (ytapo) {};
+        \node[dot] at (ytapo |- kfo) {};
+        \draw[flow] (ytapo |- kfo) -- (kfo.east);
+        \draw[flow] (kfo) -- node[above, pos=0.93] {$\hat{x}_{\mathrm{outer}}$} (kxo);
+        \draw[flow] (kxo) -- (s2o);
+
+        \coordinate (fbo) at ($(kfo.south)+(0,-0.9)$);
+        \draw[flow] (ytapo) -- (ytapo |- fbo) -| (s1o.south);
+
+        % =========================================================
+        % Grouping frames
+        % =========================================================
+        \begin{scope}[on background layer]
+            \node[group, fit=(s1o)(kio)(s2o)(kxo),
+                  label={[grouplabel]above:Outer LQI (e.g., forward pressure)}] {};
+            \node[group, fit=(s1i)(kii)(s2i)(kxi)(eqda)(kfi),
+                  label={[grouplabel]above:Inner LQI loop (EQ-DA reference pressure)}] {};
+        \end{scope}
+    \end{tikzpicture}
+    }%
+    \caption{Cascade LQI control of an EQ-DA. The outer LQI controller
+    compares the outer-parameter setpoint $setpoint_{\mathrm{outer}}^{\ast}(k)$ with the
+    measured outer-parameter $measurement_{\mathrm{outer}}(k)$ and computes the setpoint
+    $p_{\mathrm{ref}}^{\ast}(k)$ for the inner loop,
+    $p_{\mathrm{ref}}^{\ast}(k) = -K_x^{\mathrm{outer}}\hat{x}_{\mathrm{outer}}(k) - K_i^{\mathrm{outer}} z_{\mathrm{outer}}(k)$.
+    The inner LQI controller tracks this setpoint by adjusting the
+    valve signal $u(k)$ of the EQ-DA. Each loop has its own Kalman observer: the
+    inner observer uses $u(k)$ and $p_{\mathrm{ref}}(k)$, while the outer observer
+    uses the measured output parameter $measurement_{\mathrm{outer}}(k)$ and
+    $p_{\mathrm{ref}}(k)$ as an input, consistent with the identification of the
+    outer model.}
+    \label{fig:cascade_lqi}
+\end{figure}
 
 Eventually, system identification yields a single state-space model with states describing the inner-loop dynamics and states describing the outer-loop dynamics. Any interaction between the loops is then captured in the same model.
 
 \newpage
 \section{Results: internal loop}
+\label{sec:internal_loop}
 An EQ-DA was connected to an upstream pressure of 25~bar. A 100~micron flow restrictor was placed on the reference pressure side, so that the inlet valve is the primary control element and controls the pressure against a constant leak. The objective is to design a single-valve LQI controller.
 % TODO: the figures label the controlled valve "Valve B (outflow)", while this text says inlet valve. Make the labels consistent.
 
@@ -624,7 +763,7 @@ The figure shows that a speed factor of about 500 gives fast tracking without si
 \subsection{Setpoint filtering}
 Figure~\ref{fig:setpoint_filtering} shows setpoints alternating between 1 and 2~bar, with a speed factor of 500. Without filtering, a decreasing setpoint leads to the maximum pressure decay rate being reached. The controller keeps integrating and closes the valve completely while the pressure cannot fall any faster. This causes integrator windup and a temporary loss of control, resulting in an undershoot to about 0.5~bar. With the setpoint filter of Section~\ref{sec:setpoint_filter}, the reference is smoothed with a first-order low-pass filter whose time constant follows the identified dynamics, so the setpoint does not change faster than the system can follow. The filter is bypassed once the pressure is within $\pm10\%$ of the setpoint.
 
-The filter works well for decreasing setpoints but less well for increasing setpoints. It largely prevents over- and undershoot, at the cost of a slower response, and does not guarantee optimal performance. Different filter designs can be explored to obtain better performance, more close to maximal speed without saturation and windup.
+The filter works well for decreasing setpoints but less well for increasing setpoints. It largely prevents over- and undershoot, at the cost of a slower response, and does not guarantee optimal performance. Different filter designs can be explored to obtain better performance, closer to maximum speed without saturation and windup.
 
 \begin{figure}[ht!]
     \centering
@@ -636,11 +775,177 @@ The filter works well for decreasing setpoints but less well for increasing setp
 % TODO: add a comparison with the current PID controller on the same setpoint
 % profile (rise time, overshoot, settling time, IAE).
 
-% Section 3 is left out until results are available.
 \clearpage
 \section{Results: external loop}
-Experiments with the external loop, where the internal and external loops are both
-controlled by LQI, will be reported in a future version of this report.
+\subsection{Closed-loop forward-pressure control}
+In this section, a forward-pressure setup is created as shown in Figure~\ref{fig:forward_pressure_setup}. The forward pressure is measured with a pressure sensor and controlled by adjusting the reference pressure of the EQ-DA. The objective is to design a second LQI controller that controls the forward pressure by adjusting the reference pressure setpoint of the inner loop. The main objective is to achieve a good balance between speed and robustness of the outer loop, which should be controlled by the same speed factor as the inner loop. This is a tuning parameter that can be implemented as a slider in the GUI. 
+
+\begin{figure}[ht]
+    \centering
+    \begin{tikzpicture}[
+        font=\small,
+        >={Latex[length=2mm]},
+        gas/.style    ={line width=1.0pt},
+        refline/.style={line width=1.0pt, draw=orange!70!black},
+        signal/.style ={->, line width=0.6pt, dashed, draw=blue!60!black},
+        ctrl/.style   ={draw=green!45!black, fill=green!8, rounded corners=3pt,
+                        line width=0.6pt, align=center,
+                        minimum height=0.8cm, minimum width=5.4cm},
+        sensor/.style ={draw=blue!60!black, fill=blue!7, circle, line width=0.6pt,
+                        minimum size=7mm, inner sep=0pt, font=\scriptsize\bfseries},
+        act/.style    ={draw, fill=white, line width=0.6pt, minimum size=3.2mm,
+                        inner sep=0pt},
+        lbl/.style    ={font=\footnotesize},
+        dot/.style    ={circle, fill, inner sep=1.3pt},
+        valve/.pic={
+            \draw[line width=0.6pt, fill=white]
+                (-0.28,-0.18) -- (0.28,0.18) -- (0.28,-0.18) -- (-0.28,0.18) -- cycle;
+        },
+        orifice/.pic={
+            \fill[white] (-0.1,-0.25) rectangle (0.1,0.25);
+            \draw[line width=0.9pt] (-0.07,-0.25) -- (-0.07,0.25)
+                                    (0.07,-0.25)  -- (0.07,0.25);
+        },
+    ]
+        % ---------------------------------------------------------
+        % Grid: main vertical axis at x = 4.5
+        %   y = 0    supply / process line
+        %   y = 4    reference chamber (between valve A and B)
+        % ---------------------------------------------------------
+        \def\xA{2.3}  \def\xP{4.5}  \def\xR{4.5}  \def\xB{6.7}  \def\xD{1.2}
+        \def\yS{0}    \def\yM{4.0}  \def\yL{2.2}
+
+        % =========================================================
+        % EQ-DA
+        % =========================================================
+        \draw[draw=orange!70!black, fill=orange!4, rounded corners=5pt,
+              line width=0.7pt] (1.0,3.0) rectangle (8.0,6.8);
+        \node[anchor=south west, font=\bfseries] at (1.0,6.8) {EQ-DA};
+        \node[ctrl] (ctrl) at (\xR,6.0)
+            {Controller\\[-2pt]\footnotesize inner LQI ($p_{\mathrm{ref}}$) + outer LQI ($p_{\mathrm{fwd}}$)};
+
+        % Valve A -> reference chamber -> valve B -> vent
+        \draw[refline] (\xA+0.28,\yM) -- (\xB-0.28,\yM);
+        \draw[gas, ->] (\xB+0.28,\yM) -- (9.0,\yM) node[above left, lbl] {vent};
+        \pic at (\xA,\yM) {valve};
+        \pic at (\xB,\yM) {valve};
+        \node[lbl, below=0.2cm] at (\xA,\yM) {valve A (inlet)};
+        \node[lbl, below=0.2cm] at (\xB,\yM) {valve B (outlet)};
+
+        % Actuators
+        \node[act] (actA) at (\xA,4.7) {};
+        \node[act] (actB) at (\xB,4.7) {};
+        \draw[line width=0.6pt] (\xA,\yM) -- (actA) (\xB,\yM) -- (actB);
+        \draw[signal] (actA |- ctrl.south) -- (actA);
+        \draw[signal] (actB |- ctrl.south) -- (actB);
+
+        % Internal pressure sensor
+        \node[sensor] (PTi) at (\xP,4.7) {PT};
+        \draw[refline] (\xP,\yM) -- (PTi);
+        \node[dot] at (\xP,\yM) {};
+        \node[lbl, right=1pt of PTi] {$p_{\mathrm{ref}}$};
+        \draw[signal] (PTi) -- (PTi |- ctrl.south);
+
+        % =========================================================
+        % Reference pressure to the dome, with leak
+        % =========================================================
+        \node[dot] at (\xR,\yM) {};
+        \draw[refline, ->] (\xR,\yM) -- (\xR,0.5);
+        \node[lbl, right, text=orange!50!black] at (\xR,2.6) {$p_{\mathrm{ref}}$};
+        \node[dot] at (\xR,\yL) {};
+        \draw[refline, ->] (\xR,\yL) -- (\xA-1.0,\yL) node[left, lbl, text=black] {atm.};
+        \pic at (\xA,\yL) {orifice};
+        \node[lbl, above=0.25cm] at (\xA,\yL) {leak};
+
+        % =========================================================
+        % Equilibar
+        % =========================================================
+        \draw[draw=gray!50!black, fill=gray!12, line width=0.7pt, rounded corners=2pt]
+            (\xR-1.0,-0.55) rectangle (\xR+1.0,0.5);
+        \node[font=\bfseries\small] at (\xR,-0.03) {Equilibar};
+
+        % Supply: shared by EQ-DA (valve A) and Equilibar
+        \draw[gas] (0.3,\yS) |- (\xA-0.28,\yM);
+        \draw[gas] (-0.6,\yS) -- (\xD-0.28,\yS);
+        \draw[gas, ->] (\xD+0.28,\yS) -- (\xR-1.0,\yS);
+        % Pressure reducer 25 -> 3 bar
+        \pic at (\xD,\yS) {valve};
+        \draw[line width=0.6pt] (\xD,\yS) -- (\xD,0.45);
+        \draw[line width=0.6pt, fill=white]
+            (\xD-0.25,0.45) -- (\xD+0.25,0.45) arc (0:180:0.25) -- cycle;
+        \node[lbl, below=0.2cm, align=center] at (\xD,\yS) {reducer};
+        \node[lbl, above] at (2.5,\yS) {$\approx 3$ bar};
+        \node[dot] at (0.3,\yS) {};
+        \node[lbl, left, align=right] at (-0.6,\yS) {supply\\25 bar};
+
+        % Outlet: forward-pressure measurement, then leak
+        \draw[gas, ->] (\xR+1.0,\yS) -- (9.0,\yS) node[right, lbl] {atm.};
+        \pic at (8.0,\yS) {orifice};
+        \node[lbl, below=0.25cm] at (8.0,\yS) {leak};
+
+        \node[sensor] (PTe) at (\xB,1.0) {PT};
+        \draw[gas] (\xB,\yS) -- (PTe);
+        \node[dot] at (\xB,\yS) {};
+        \node[lbl, left=1pt of PTe] {$p_{\mathrm{fwd}}$};
+
+        % Forward-pressure signal to the controller
+        \draw[signal] (PTe.east) -- (9.6,1.0) |- (ctrl.east);
+
+        % =========================================================
+        % Legend
+        % =========================================================
+        \begin{scope}[shift={(-0.6,-1.3)}]
+            \draw[gas] (0,0) -- (0.7,0);
+            \node[lbl, anchor=west] at (0.8,0) {supply / process gas};
+            \draw[refline] (4.3,0) -- (5.0,0);
+            \node[lbl, anchor=west] at (5.1,0) {reference pressure};
+            \draw[signal, -] (8.4,0) -- (9.1,0);
+            \node[lbl, anchor=west] at (9.2,0) {signal};
+        \end{scope}
+    \end{tikzpicture}
+    \caption{Forward-pressure control set-up. The 25~bar supply feeds the EQ-DA directly and
+    the Equilibar via a pressure reducer that lowers it to 3~bar. Inside the EQ-DA, the reference pressure $p_{\mathrm{ref}}$ is
+    the pressure between the inlet valve (A) and the outlet valve (B); it is
+    measured by the internal pressure transmitter and loads the dome of the
+    Equilibar. A leak on the reference side and a leak downstream of the
+    Equilibar provide a constant outflow. Valve A controls against a constant leak. The forward pressure
+    $p_{\mathrm{fwd}}$ is measured between the Equilibar and the downstream leak
+    and fed back to the EQ-DA controller, which runs the inner LQI loop on
+    $p_{\mathrm{ref}}$ and the outer LQI loop on $p_{\mathrm{fwd}}$
+    (Figure~\ref{fig:cascade_lqi}). Again, the reference pressure is controlled such that the Equilibar maintains the forward-pressure setpoint, while there is a constant leak downstream of the Equilibar.}
+    \label{fig:forward_pressure_setup}
+\end{figure}
+
+\newpage
+\subsubsection{System identification}
+A similar open-loop identification procedure as in Section~\ref{sec:internal_loop} is applied to the forward-pressure control loop. The PRBS reference excites the inner loop, causing the forward pressure to fluctuate. The measured reference-side pressure ($p_{\mathrm{ref}}$) is used as the input to the \texttt{n4sid} algorithm, while the external forward pressure ($p_{\mathrm{fwd}}$) is used as the output. The system appeared to be third order. The state-space matrices $\{A, B, C, D\}$ are estimated. The results are shown in Figure~\ref{fig:forward_pressure_identification}. The identified model is then used to design an LQI controller for the outer loop.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/1_forward_pressure_identification_results.svg}
+    \caption{Identification of the cascade loop with forward-pressure control using an open-loop approach. A PRBS reference $r(k)$ excites the inner loop. The previously designed LQI controller tracks the PRBS reference, causing the forward pressure ($p_{\mathrm{fwd}}$) to fluctuate. The base amplitude of the PRBS reference is determined manually such that the PRBS leads to fluctuations in the forward pressure. The measured reference-side pressure ($p_{\mathrm{ref}}$) is used as the input to the \texttt{n4sid} algorithm, while the external forward pressure ($p_{\mathrm{fwd}}$) is used as the output. Again, the state-space matrices $\{A, B, C, D\}$ are estimated.}
+    \label{fig:forward_pressure_identification}
+\end{figure}
+
+\newpage
+\subsubsection{Closed-loop control}
+Figure~\ref{fig:forward_pressure_closed_loop} shows the closed-loop response of the cascade loop with forward-pressure control. Now two LQI controllers are implemented: one controls the reference pressure of the EQ-DA, while the second controls the forward pressure by adjusting the reference setpoint. The speed factor from Equation~\eqref{eq:weight} is used to tune the aggressiveness of both controllers; in this experiment it is set to 100. The results show that, at the start, the reference pressure must first reach the opening point of the Equilibar. The reference pressure is increased until the Equilibar closes, leading to a decrease in the forward pressure. This can be solved by adding a pressure sensor upstream of the Equilibar. The outer loop then controls the reference pressure to track the forward-pressure setpoint.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/2_forward_pressure_closed_loop_results.svg}
+    \caption{Closed-loop response of the cascade loop with forward-pressure control. Two LQI controllers are implemented: one controlling the reference pressure of the EQ-DA, while the second controls the forward pressure by adjusting the reference setpoint.}
+    \label{fig:forward_pressure_closed_loop}
+\end{figure}
+
+\newpage
+\subsubsection{Different speed settings}
+Similar to the inner loop, the speed factor is the only tuning parameter for the outer loop. The results of several experiments with different speed settings are shown in Figure~\ref{fig:forward_pressure_closed_loop_step_response}. The setpoint is stepped between 1.5 and 2~bar. The results indicate that a higher speed setting leads to a faster response, but eventually also to unstable behaviour. The speed setting can be adjusted in the future with a slider in the GUI.
+\begin{figure}[h!]
+    \centering
+    \includesvg[width=\textwidth]{figures/3_forward_pressure_closed_loop_step_response.svg}
+    \caption{The LQI controller for the forward pressure is tested with setpoints between 1.5 and 2~bar. Several experiments with different speed settings are performed. The results indicate that a higher speed setting leads to a faster response, but eventually also to unstable behaviour. The speed setting is the only tuning parameter for the LQI controller and can be adjusted in the future with a slider in the GUI.}
+    \label{fig:forward_pressure_closed_loop_step_response}
+\end{figure}
+
 
 \clearpage
 \section{Summary for implementation on EQ-DA hardware}
@@ -740,14 +1045,22 @@ The procedure is split into two parts. Algorithm~\ref{alg:offline} covers the st
 \section*{Version control}
 \addcontentsline{toc}{section}{Version control}
 
-\begin{tabular}{|c|c|l|}
-\hline
-Version & Date & Description \\
-\hline
+\begingroup
+\renewcommand{\arraystretch}{1.35}
+\setlength{\aboverulesep}{0pt}
+\setlength{\belowrulesep}{0pt}
+\small
+\begin{tabularx}{\textwidth}{@{}>{\centering\arraybackslash}p{0.14\textwidth} >{\centering\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\rowcolor{gray!15}
+\textbf{Version} & \textbf{Date} & \textbf{Description} \\
+\midrule
 0.1 & August 21, 2026 & Initial draft \\
 0.2 & October 9, 2026 & Included methodological details \\
 0.3 & October 28, 2026 & Included internal loop results \\
-\hline
-\end{tabular}
+0.4 & November 13, 2026 & Included external loop results; added figure to Section~\ref{sec:inner_vs_outer_loop} \\
+\bottomrule
+\end{tabularx}
+\endgroup
 
 \end{document}
